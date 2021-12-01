@@ -19,6 +19,7 @@ library("codyn")
 library("wsyn")
 library("lubridate")
 library("here")
+library("purrr")
 
 
 # read in data
@@ -123,3 +124,37 @@ quant_ppt_mo <-  ppt_filter_mo %>%
   separate(plot_id, c("site", "plotnum", "assignment"), sep = "_") %>%
   unite("plot_id_needle", site:plotnum, sep = "_", remove = TRUE)%>%
   rename(ppt_raw = value)
+
+
+# Wavelet analyses for individual trees per plot
+
+#subset plot 1
+rwi_00s_1 <- rwi_00s_filtered %>%
+  filter(plot == "site01")
+
+# format matrix for analysis
+rwi_00s_1 <- as.matrix(rwi_00s_1)
+colnames(rwi_00s_1) <- NULL
+rwi_00s_1 <- rwi_00s_1[, c(3:121)] 
+
+# convert character matrix to numeric
+rwi_00s_1 = as.data.frame(rwi_00s_1, stringsAsFactors = FALSE)
+rwi_00s_1 = map_df(rwi_00s_1, as.numeric)
+rwi_00s_1_mx <- as.matrix(rwi_00s_1)
+
+# check if matrix is numeric
+str(rwi_00s_1_mx)
+
+# NOT SURE IF THIS IS NECESSARY #
+# cmat<-cor(t(rwi_00s_1))
+# diag(cmat)<-NA
+# cmat<-as.vector(cmat)
+# cmat<-cmat[!is.na(cmat)]
+# hist(cmat,breaks = "Sturges",xlab="Pearson correlation",ylab="Count")
+
+
+times <- 1:119
+rwi_00s_1_mx <- cleandat(rwi_00s_1_mx, times, 1)
+res<-wpmf(rwi_00s_1_mx$cdat,times,sigmethod="quick")
+plotmag(res)
+
