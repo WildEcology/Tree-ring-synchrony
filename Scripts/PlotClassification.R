@@ -32,7 +32,8 @@ plot_class_rev <- plot_class %>%
 comb_plotdat <- plot_class_rev %>% 
   left_join(plotnames) %>% 
   rename(plot_id = plot_id_climate) %>% 
-  select(plot_id, plot_type)
+  select(plot_id, plot_type, plot_label_2) %>% 
+  rename(plot=plot_label_2)
 
 ##mean weather data
 prismdat <- prism_ann %>% 
