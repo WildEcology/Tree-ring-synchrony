@@ -158,3 +158,20 @@ rwi_00s_1_mx <- cleandat(rwi_00s_1_mx, times, 1)
 res<-wpmf(rwi_00s_1_mx$cdat,times,sigmethod="quick")
 plotmag(res)
 
+
+## loop through plot to produce WMF's for each plot
+sites <- unique(rwi_00s_filtered$plot)
+times <- 1:119
+for (s in 1:length(sites)){
+  temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
+  temp <- temp[,-c(1,2)]
+  temp <- as.matrix(temp)
+  names(temp) <- NULL
+  
+  temp_clean <- cleandat(temp, times, 1)
+  temp_res <- wpmf(temp_clean$cdat,times,sigmethod="quick")
+  
+  png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=1000,height=768)
+  plotmag(temp_res)
+  dev.off()
+}
