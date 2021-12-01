@@ -71,7 +71,6 @@ rwi_70s_filtered<- test4[rowSums(is.na(test4))==0,]
 
 
 # determine precipitation quantiles for measures of drought (annual)
-
 ppt_filter_an <- anprismplot %>%
   filter(variable == "ppt")
 
