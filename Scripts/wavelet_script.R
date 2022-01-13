@@ -153,7 +153,7 @@ str(rwi_00s_1_mx)
 # hist(cmat,breaks = "Sturges",xlab="Pearson correlation",ylab="Count")
 
 
-times <- 1:119
+times <- 1900:2018
 rwi_00s_1_mx <- cleandat(rwi_00s_1_mx, times, 1)
 res<-wpmf(rwi_00s_1_mx$cdat,times,sigmethod="quick")
 plotmag(res)
@@ -178,3 +178,7 @@ for (s in 1:length(sites)){
 }
 dev.off()
 }
+
+
+print(temp_res$dat)
+
