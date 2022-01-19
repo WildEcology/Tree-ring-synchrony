@@ -198,7 +198,7 @@ print(temp_res$dat)
     temp_res2 <- wmf(temp_clean$cdat,times)
     
     par(mfcol=c(1,2))
-    #png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=2000,height=768)
+    #png(filename=paste0("./Figures/wavelet_tree_",sites[s],".png"),width=2000,height=768)
     plotmag(temp_res)
     plotmag(temp_res2)
     #dev.off()
