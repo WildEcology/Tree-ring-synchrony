@@ -159,10 +159,10 @@ res<-wpmf(rwi_00s_1_mx$cdat,times,sigmethod="quick")
 plotmag(res)
 
 
-## loop through plot to produce WMF's for each plot
+## loop through plot to produce WPMF's for each plot
 {sites <- unique(rwi_00s_filtered$plot)
 times <- 1:119
-pdf(file="./Figures/wavelets.pdf",width=11,height=11,onefile=T)
+pdf(file="./Figures/wpmf.pdf",width=11,height=11,onefile=T)
 for (s in 1:length(sites)){
   temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
   temp <- temp[,-c(1,2)]
@@ -181,4 +181,31 @@ dev.off()
 
 
 print(temp_res$dat)
+
+## loop through plot to produce both WPMF's and WMF's for each plot to compare
+## the role of magnitude
+{sites <- unique(rwi_00s_filtered$plot)
+  times <- 1:119
+  pdf(file="./Figures/wpmf_wmf.pdf",width=22,height=11,onefile=T)
+  for (s in 1:length(sites)){
+    temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
+    temp <- temp[,-c(1,2)]
+    temp <- as.matrix(temp)
+    names(temp) <- NULL
+    
+    temp_clean <- cleandat(temp, times, 1)
+    temp_res <- wpmf(temp_clean$cdat,times,sigmethod="quick")
+    temp_res2 <- wmf(temp_clean$cdat,times)
+    
+    par(mfcol=c(1,2))
+    #png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=2000,height=768)
+    plotmag(temp_res)
+    plotmag(temp_res2)
+    #dev.off()
+  }
+  dev.off()
+}
+
+
+
 
