@@ -161,7 +161,7 @@ plotmag(res)
 
 ## loop through plot to produce WPMF's for each plot
 {sites <- unique(rwi_00s_filtered$plot)
-times <- 1:119
+times <- 1900:2018
 pdf(file="./Figures/wpmf.pdf",width=11,height=11,onefile=T)
 for (s in 1:length(sites)){
   temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
@@ -180,12 +180,11 @@ dev.off()
 }
 
 
-print(temp_res$dat)
 
 ## loop through plot to produce both WPMF's and WMF's for each plot to compare
 ## the role of magnitude
 {sites <- unique(rwi_00s_filtered$plot)
-  times <- 1:119
+  times <- 1900:2018
   pdf(file="./Figures/wpmf_wmf.pdf",width=22,height=11,onefile=T)
   for (s in 1:length(sites)){
     temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
@@ -206,6 +205,42 @@ print(temp_res$dat)
   dev.off()
 }
 
+# pull out (a)synchronous events
+raw_values <- as.data.frame(temp_res$values)
+colnames(raw_values) <- temp_res$timescales
+raw_values$year <- times
 
+
+events <- raw_values %>%
+  pivot_longer(cols = 1:67, names_to = "timescales", values_to ="values")
+events$values <- as.numeric(events$values)
+events$timescales <- as.numeric(events$timescales)
+events$values <- abs(events$values)
+events <- na.omit(events)
+
+events <- events %>%
+  mutate(event = case_when(values >= 0.8 ~ "synchronous",
+                           values <= 0.2 ~ "asynchronous",
+                           TRUE ~ "non"))
+
+synchronous <- events%>%
+  filter(event == "synchronous")
+# sychronous events:
+# 1973-1975, timescale ~ 2
+# 1980-1984, timescale ~ 2
+# 1985, timescale ~ 12-13
+# 2010, timescale ~ 5-6
+
+asynchronous <- events%>%
+  filter(event == "asynchronous")
+# asynchronous events:
+# A LOT!, maybe we need to tighten the threshold?
+
+# visualize the events
+events_plot <-ggplot(events,aes(year,timescales,fill=event))+
+  geom_tile(color= "white",size=0.1) 
+# not super helpful because of all the asynchronous events
+
+  
 
 
