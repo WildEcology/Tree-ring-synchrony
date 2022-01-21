@@ -205,7 +205,8 @@ dev.off()
   dev.off()
 }
 
-# pull out (a)synchronous events
+# pull out (a)synchronous events for one plot - not sure exactly which one it
+# at the moment but just practicing the code in order to loop it through for each
 raw_values <- as.data.frame(temp_res$values)
 colnames(raw_values) <- temp_res$timescales
 raw_values$year <- times
