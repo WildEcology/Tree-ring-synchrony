@@ -232,10 +232,18 @@ synchronous <- events%>%
 # 1985, timescale ~ 12-13
 # 2010, timescale ~ 5-6
 
+
+
 asynchronous <- events%>%
   filter(event == "asynchronous")
 # asynchronous events:
 # A LOT!, maybe we need to tighten the threshold?
+
+test_async <- events%>%
+  group_by(event, timescales)%>%
+  summarize(count = n())%>%
+  filter(event == "asynchronous")
+
 
 # visualize the events
 events_plot <-ggplot(events,aes(year,timescales,fill=event))+
