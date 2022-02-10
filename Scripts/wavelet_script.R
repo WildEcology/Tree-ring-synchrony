@@ -159,25 +159,25 @@ res<-wpmf(rwi_00s_1_mx$cdat,times,sigmethod="quick")
 plotmag(res)
 
 
-## loop through plot to produce WPMF's for each plot
-{sites <- unique(rwi_00s_filtered$plot)
-times <- 1900:2018
-pdf(file="./Figures/wpmf.pdf",width=11,height=11,onefile=T)
-for (s in 1:length(sites)){
-  temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
-  temp <- temp[,-c(1,2)]
-  temp <- as.matrix(temp)
-  names(temp) <- NULL
-  
-  temp_clean <- cleandat(temp, times, 1)
-  temp_res <- wpmf(temp_clean$cdat,times,sigmethod="quick")
-  
-  #png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=1000,height=768)
-  plotmag(temp_res)
-  #dev.off()
-}
-dev.off()
-}
+# ## loop through plot to produce WPMF's for each plot
+# {sites <- unique(rwi_00s_filtered$plot)
+# times <- 1900:2018
+# pdf(file="./Figures/wpmf.pdf",width=11,height=11,onefile=T)
+# for (s in 1:length(sites)){
+#   temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
+#   temp <- temp[,-c(1,2)]
+#   temp <- as.matrix(temp)
+#   names(temp) <- NULL
+#   
+#   temp_clean <- cleandat(temp, times, 1)
+#   temp_res <- wpmf(temp_clean$cdat,times,sigmethod="quick")
+#   
+#   #png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=1000,height=768)
+#   plotmag(temp_res)
+#   #dev.off()
+# }
+# dev.off()
+# }
 
 
 
@@ -252,4 +252,30 @@ events_plot <-ggplot(events,aes(year,timescales,fill=event))+
 
   
 
+## calculate quantiles of phase synchrony expected by chance
 
+#n = number of trees
+#nreps = number of randomizations to generate distribution
+#q = quantiles to return
+
+
+tree_per_plot <- rwi_00s %>%
+  group_by(plot, year)%>%
+  summarize(numtree = n())%>%
+  filter(numtree > 5) %>%
+  select(-year)%>%
+  unite("plot_tree", plot:numtree, sep = "_", remove = FALSE)%>%
+  mutate()
+
+match <- unique(tree_per_plot$plot_tree)
+
+psync.by.chance <- function(n, nreps=100, prob=c(0.025, 0.975)){
+  
+  #generates sets of random phasors
+  rndphas <- matrix(complex(modulus=1, argument=2*pi*runif(n*nreps)), n, nreps)
+  #takes the average--this is analogous to the wavelet phasor mean field
+  rndphas.avg <- Mod(apply(rndphas, FUN=mean, MARGIN=2))
+  #spit out quantiles corresponding to prob
+  return(quantile(rndphas.avg, prob))
+  
+}
