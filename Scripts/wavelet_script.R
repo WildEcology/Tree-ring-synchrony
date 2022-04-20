@@ -661,6 +661,8 @@ for(s in 1:length(plots)){
   
 }
 
+## Visualize significance proportions ## 
+
 prop_sync <- ggplot(proportions_final, aes(x=year, y=synch, color=interval))+
   geom_smooth(method='lm', span = 2.75,  se = TRUE)+
   #geom_smooth(method='lm', se = TRUE)+
@@ -694,7 +696,7 @@ prop_NS <- ggplot(proportions_final, aes(x=year, y=ns, color=interval))+
 
 
 
-# Create wavelet to calculate spatial coherence across plots
+#### ACROSS PLOTS - WAVELET SPATIAL COHERENCE ####
 
 avg_plot <- rwi_00s_filtered %>%
   pivot_longer(3:121, names_to = "year", values_to = "rwi")%>%
@@ -723,7 +725,7 @@ plotmag(res)
 #### WAVELET COHERENCE WITH ENVIRONMENTAL VARIABLES ####
 
 # create matrices for environmental variables
-test2 <- left_join(test, rwi_00s, by = c("year", "plot"))
+test2 <- left_join(rwi_5, rwi_00s, by = c("year", "plot"))
 
 ppt <- test2 %>%
   select(year, plot, ppt)%>%
@@ -781,6 +783,40 @@ res_tmax<-bandtest(res_tmax,c(2,5))
 res_tmax<-bandtest(res_tmax,c(10,20))
 get_bandp(res_tmax)
 
+# investigate significance for timescale intervales
+short <- c(2,4)
+medium <- c(4,8)
+long <- c(8,16)
+xlong <- c(16,32)
+
+res_ppt<-bandtest(res_ppt,short)
+res_ppt<-bandtest(res_ppt,medium)
+res_ppt<-bandtest(res_ppt,long)
+res_ppt<-bandtest(res_ppt,xlong)
+ppt_coherence <- get_bandp(res_ppt)
+
+res_tmax<-bandtest(res_tmax,short)
+res_tmax<-bandtest(res_tmax,medium)
+res_tmax<-bandtest(res_tmax,long)
+res_tmax<-bandtest(res_tmax,xlong)
+tmax_coherence <- get_bandp(res_tmax)
+
+ppt_coherence <- ppt_coherence %>%
+  mutate(phase_test = (mn_phs/pi))%>%
+  mutate(phase = case_when(phase_test <= 0.25 ~ "in",
+                           phase_test >= 0.25 & phase_test <= 0.75 ~ "lag",
+                           phase_test >= 0.75 ~ "anti"))%>%
+  mutate(sig = case_when(p_val >= 0.05 ~ "non",
+                         p_val <= 0.05 ~ "sig"))
+
+tmax_coherence <- tmax_coherence %>%
+  mutate(phase_test = (mn_phs/pi))%>%
+  mutate(phase = case_when(phase_test <= 0.25 ~ "in",
+                           phase_test >= 0.25 & phase_test <= 0.75 ~ "lag",
+                           phase_test >= 0.75 ~ "anti"))%>%
+  mutate(sig = case_when(p_val >= 0.05 ~ "non",
+                         p_val <= 0.05 ~ "sig"))
+
 # WAVELET LINEAR MODEL
 # prepare data
 dat<-list(rwi=avg_plot_w_mx,ppt=ppt_mx,tmax=tmax_mx)
@@ -803,6 +839,128 @@ wlm_all_drop2<-bandtest(wlm_all_drop2,long)
 get_bandp(wlm_all_drop1)
 get_bandp(wlm_all_drop2)
 
+## TEST LINEAR MODEL ACROSS PROPORTION TIME PERIOD INTERVALS ##
 
+# prepare data
+dat<-list(rwi=avg_plot_w_mx,ppt=ppt_mx,tmax=tmax_mx)
+
+# create model
+wlm_all<-wlm(dat,times,resp=1,pred=2:3,norm="powall",scale.max.input=28)
+# run model for each environmental variable
+wlm_all_drop1<-wlmtest(wlm_all,drop="ppt",sigmethod="fft",nrand=1000)
+wlm_all_drop2<-wlmtest(wlm_all,drop="tmax",sigmethod="fft",nrand=1000)
+
+#specify timescales to test significance
+short <- c(2,4)
+medium <- c(4,8)
+long <- c(8,16)
+xlong <- c(16,32) # coherence only specifies to timescales up to 30
+
+# significance of both variables at each timescale
+wlm_all_drop1<-bandtest(wlm_all_drop1,short)
+wlm_all_drop1<-bandtest(wlm_all_drop1,medium)
+wlm_all_drop1<-bandtest(wlm_all_drop1,long)
+wlm_all_drop1<-bandtest(wlm_all_drop1,xlong)
+
+wlm_all_drop2<-bandtest(wlm_all_drop2,short)
+wlm_all_drop2<-bandtest(wlm_all_drop2,medium)
+wlm_all_drop2<-bandtest(wlm_all_drop2,long)
+wlm_all_drop2<-bandtest(wlm_all_drop2,xlong)
+
+get_bandp(wlm_all_drop1)
+get_bandp(wlm_all_drop2)
+
+
+#### PLOT VARIABILITY & SYNCHONRY ####
+rwi_00s_filtered_long <- rwi_00s_filtered %>%
+  pivot_longer(3:121, names_to = "year", values_to ="rwi")%>%
+  group_by(plot, year)%>%
+  summarize(avg_growth = mean(rwi))
+
+raw_growth <- ggplot(rwi_00s_filtered_long, aes(x = year, y = avg_growth, group = plot, col=plot))+
+  geom_line()+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "black", angle = 90, hjust = .5, face = "plain"))
+
+calcSE <- function(x){
+  x <- x[!is.na(x)]
+  sd(x)/sqrt(length(x))
+}
+
+plot_var <- rwi_00s_filtered %>%
+  pivot_longer(3:121, names_to = "year", values_to ="rwi")%>%
+  group_by(plot)%>% 
+  summarize(avg_growth = mean(rwi), se_growth = calcSE(rwi), CI=1.96*calcSE(rwi))%>%
+  mutate(plot_icov = (avg_growth/se_growth))
+plot_var$year <- as.numeric(plot_var$year)
+
+
+# calculate avg synchrony for each timescale interval for each plot
+plots <- unique(rwi_00s_filtered$plot)
+year <- 1900:2018
+
+plot_current_results <- NULL
+
+for(s in 1:length(plots)){
+  current.plot<-plots[s]
+  temp<-rwi_00s_filtered %>% 
+    filter(plot %in% current.plot) %>% 
+    select(-plot)
+  rwi_00s_1 <- rwi_00s_filtered %>%
+    filter(plot == current.plot)
+  # format matrix for analysis
+  rwi_00s_1 <- as.matrix(rwi_00s_1)
+  colnames(rwi_00s_1) <- NULL
+  rwi_00s_1 <- rwi_00s_1[, c(3:121)] 
+  # convert character matrix to numeric
+  rwi_00s_1 = as.data.frame(rwi_00s_1, stringsAsFactors = FALSE)
+  rwi_00s_1 = map_df(rwi_00s_1, as.numeric)
+  rwi_00s_1_mx <- as.matrix(rwi_00s_1)
+  # calculate wavelet
+  rwi_00s_1_mx <- cleandat(rwi_00s_1_mx, year, 1)
+  res<-wpmf(rwi_00s_1_mx$cdat,year,sigmethod="quick")
+  #extract raw values
+  M1 <- as.data.frame(res$values)
+  colnames(M1) <- res$timescales
+  #fix the imaginary #s
+  M1 <- abs(M1)
+  M1$site <- current.plot
+
+  plot_current_results <- rbind(plot_current_results, M1)
+}
+
+
+avg_sync_interval <- plot_current_results %>%
+  pivot_longer(1:67, names_to = "ts", values_to = "values")
+  avg_sync_interval$ts <- as.numeric(avg_sync_interval$ts)
+
+avg_sync_interval <- avg_sync_interval %>%
+  mutate(interval = case_when(ts >= 2 & ts <= 4 ~ "short",
+                              ts > 4 & ts <= 8 ~ "medium",
+                              ts > 8 & ts <= 16 ~ "long",
+                              ts > 16 & ts <= 32 ~ "xlong",
+                              ts >= 32 ~ "ancient"))
+avg_sync_interval <- na.omit(avg_sync_interval)
+
+avg_sync_interval <- avg_sync_interval%>%
+  group_by(site,interval)%>%
+  summarise(avg_sync = mean(values))
+
+plotVar_avgSync <- right_join(avg_sync_interval, plot_var, by = c("site" = "plot"))
+
+pVAR<- ggplot(data = plotVar_avgSync, aes(x=plot_icov,y=avg_sync, group = interval, col=interval))+
+  geom_point(size = 3)+
+  geom_smooth(method = "lm", formula = y~x, se=FALSE)+
+  # scale_x_continuous(limits=c(0,.5))+
+  # scale_y_continuous(limits=c(0,.5))+
+  labs(x="Plot Level Variation (mean/se)", y="Average Degree of Synchrony")+
+  theme_bw()+
+  scale_color_brewer(palette = "Paired",
+                     name = "Timescale Interval",
+                     labels = c("Short", "Medium", "Long", "Xlong", "Ancient"))
+
+m4 <- lm(avg_sync ~ plot_icov*interval, data = plotVar_avgSync)
+summary(m4)
+visreg::visreg(m4, xvar="plot_icov", by = "interval", overlay=T, scale="response")
 
 
