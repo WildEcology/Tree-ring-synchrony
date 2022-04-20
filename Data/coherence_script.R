@@ -1,4 +1,14 @@
+##------------------------
 
+
+# SCRIPT NAME: Coherence
+
+# AUTHOR: Kaitlyn McKnight (University of Wyoming)
+
+# DATE CREATED: 2022-04-14
+
+
+##------------------------
 # load data
 prismdat <- read.csv(here("data/rwi_prismdat.csv"))
 
