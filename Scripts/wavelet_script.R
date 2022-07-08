@@ -157,11 +157,11 @@ dev.off()
 
 ## loop through plot to produce both WPMF's and WMF's for each plot to compare
 ## the role of magnitude
-{sites <- unique(rwi_00s_filtered$plot)
+{sites <- unique(rwi_00s_filtered_wide$plot)
   times <- 1900:2018
   pdf(file="./Figures/wpmf_wmf.pdf",width=22,height=11,onefile=T)
   for (s in 1:length(sites)){
-    temp <- rwi_00s_filtered[which(rwi_00s_filtered$plot == sites[s]),]
+    temp <- rwi_00s_filtered_wide[which(rwi_00s_filtered_wide$plot == sites[s]),]
     temp <- temp[,-c(1,2)]
     temp <- as.matrix(temp)
     names(temp) <- NULL
@@ -655,7 +655,7 @@ aic_output <- aictable(rawaic,nR)
 
 plots <- unique(proportions_final$plot)
 knots <- seq(1,10,1)
-spline_models <- data.frame()
+spline_models <- list()
 
 
 for(s in 1:length(plots)){
@@ -670,18 +670,17 @@ for(s in 1:length(plots)){
     filter(interval == current.interval)
 
     for(i in 1:length(knots)){
-      current.knot <- knots[i]
-      model <- glm(synch ~ ns(year,current.knot), data = prop_interval, family=binomial(link = "logit"))
-      aic <- AIC(model)
-      df <- anova(model)[2,1]
-      
-      dframe <- data.frame(df = anova(model)[2,1], AIC = AIC(model))
-      
-      spline_models<- rbind(spline_models,df)
+        current.knot <- knots[i]
+        model <- glm(synch ~ ns(year,current.knot), data = prop_interval, family=binomial(link = "logit"))
+        spline_models[[i]] <-  model
     }
   }
 }
 
+
+# try map function
+
+prop_interval <- NULL
 
 
 # for (s in 1:length(unique(proportions_final$plot))){
