@@ -79,7 +79,7 @@ for(s in 1:length(plots)){
   timescales<-get_timescales(res)
   signif<-get_signif(res)
   
-plotmag(res)
+plotmag(res, title = current.plot)
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=upper,drawlabels=F,lwd=2,
                   xaxs="i",xaxt="n",xaxp=c(0,1,5),las=1,frame=F,lty=1, add=TRUE)
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=lower,drawlabels=F,lwd=2,
