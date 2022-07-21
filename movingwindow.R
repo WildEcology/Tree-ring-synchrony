@@ -573,16 +573,7 @@ p_window <- ggplot(data=se_window_long, aes(x=as.numeric(w_start), y=syncexpl, g
 
 #### ACROSS PLOT PROPORTION SIGNIFICIANT ####
 
-# avg tree per plot
-trees_per_plot <-  rwi_00s_filtered_long %>%
-  filter(year == 2018)%>%
-  group_by(plot)%>%
-  summarise(numtree = n())
-
-avg_tree_per_plot <- round(mean(trees_per_plot$numtree))
-
-
-n <- avg_tree_per_plot
+n <- length(unique(rwi_00s_filtered_long$plot))
 psync.by.chance <- function(n, nreps=10000, prob=c(0.025, 0.975)){
   
   #generates sets of random phasors
@@ -716,11 +707,13 @@ for (xx in 1:length(unique(M2events$interval))) {
 }
 
 prop_sync_final <- prop_sync_final[2:385,]
+
 prop_sync_final[is.na(prop_sync_final)] <- 0
 
 
 ## ACROSS PLOT PROPORTION - STATS ##
 library(splines)
+library("ggeffects")
 
 # redefine timeseries for each band to include only years with at least half the timescales in that band
 
@@ -756,7 +749,7 @@ final_timeseries <- new_timeseries %>%
 
 # fit spline glms w/ binomal distributions & test different number of knots
 
-prop_sync_final_newts <- inner_join(prop_sync_final, final_timeseries)
+proportions_final <- inner_join(prop_sync_final, final_timeseries)
 
 # short term
 prop_sync_final_s <- prop_sync_final_newts %>%
@@ -818,8 +811,8 @@ rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_
 nR <- dim(prop_sync_final_m)[1]
 aic_output <- aictable(rawaic,nR)
 aic_output[1,]
-# spline with 7 knots is best fit
-synchpredict_m <- ggpredict(within_spline_7, terms = "year [all]")
+# spline with 5 knots is best fit
+synchpredict_m <- ggpredict(within_spline_5, terms = "year [all]")
 synchpredict_m$interval <- "medium"
 
 # long - term
@@ -841,8 +834,8 @@ rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_
 nR <- dim(prop_sync_final_l)[1]
 aic_output <- aictable(rawaic,nR)
 aic_output[1,]
-# spline with 6 knots is best fit
-synchpredict_l <- ggpredict(within_spline_6, terms = "year [all]")
+# spline with 4 knots is best fit
+synchpredict_l <- ggpredict(within_spline_4, terms = "year [all]")
 synchpredict_l$interval <- "long"
 
 # xlong - term
@@ -864,24 +857,513 @@ rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_
 nR <- dim(prop_sync_final_a)[1]
 aic_output <- aictable(rawaic,nR)
 aic_output[1,]
-# spline with 4 knots is best fit
-synchpredict_a <- ggpredict(within_spline_4, terms = "year [all]")
+# spline with 1 knot is best fit
+synchpredict_a <- ggpredict(within_lm, terms = "year [all]")
 synchpredict_a$interval <- "ancient"
 
 
-synchpredict <- bind_rows(synchpredict_s,synchpredict_m,synchpredict_l,synchpredict_a)
+synchpredict_across <- bind_rows(synchpredict_s,synchpredict_m,synchpredict_l,synchpredict_a)
 
 ## VISUALIZE SPLINES ##
 library("ggeffects")
 library("purrr")
 
 prop_sync_final_newts$interval_f <- factor(prop_sync_final_newts$interval)
-synchpredict$interval_f <- factor(synchpredict$interval)
+synchpredict_across$interval_f <- factor(synchpredict_across$interval)
 
 ggplot()+
-  geom_line(data = synchpredict, aes(x=x, y=predicted, col = interval), size = 1)+
-  geom_ribbon(data = synchpredict, aes(x=x, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
-  geom_point(data = prop_sync_final_newts, aes(x=year, y=synch, col=interval), alpha = 0.5, shape = 1)+
+  geom_line(data = synchpredict_across, aes(x=x, y=predicted, col = interval), size = 1)+
+  geom_ribbon(data = synchpredict_across, aes(x=x, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  geom_point(data = prop_sync_final_newts, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  xlab("Year")+
+  ylab("Synchronous events (annual proportion)")+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
+        axis.title.x = element_text(color = "black", size = 13, angle = 0, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
+        legend.title = element_text(color = "black", size = 13,face = "plain"),
+        legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
+  scale_color_discrete(name = "Timescale Band",
+                       labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                       guide = guide_legend(reverse = TRUE))+
+  scale_fill_discrete(name = "Timescale Band",
+                      labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                      guide = guide_legend(reverse = TRUE))
+
+
+
+
+#### WITHIN-PLOT PROPORTION SIGNIFICANT - ALL PLOTS LOOP ####
+tree_per_plot <- rwi_00s_filtered_long %>%
+  group_by(plot, year)%>%
+  summarize(numtree = n())%>%
+  distinct(plot, numtree)
+
+n <- unique(tree_per_plot$numtree)
+psync.by.chance <- function(n, nreps=10000, prob=c(0.025, 0.975)){
+  
+  #generates sets of random phasors
+  rndphas <- matrix(complex(modulus=1, argument=2*pi*runif(n*nreps)), n, nreps)
+  #takes the average--this is analogous to the wavelet phasor mean field
+  rndphas.avg <- Mod(apply(rndphas, FUN=mean, MARGIN=2))
+  #spit out quantiles corresponding to prob
+  return(quantile(rndphas.avg, prob))
+  
+}
+
+temp_xx <- psync.by.chance(n)
+plots <- unique(tree_per_plot$plot)
+thresholds<- matrix(NA, ncol=3, nrow=length(plots))
+colnames(thresholds)<- c("plot","lower","upper")
+
+
+proportions_final <- data.frame()
+
+for(s in 1:length(plots)){
+  current.plot<-plots[s]
+  temp<-tree_per_plot %>% 
+    filter(plot %in% current.plot) %>% 
+    select(-plot)
+  n<-temp$numtree[1]
+  nreps <- 10000
+  temp<-psync.by.chance(n=n, nreps=nreps, prob=c(0.005, 0.995))
+  thresholds[s,1] <- current.plot
+  thresholds[s,2:3] <- temp
+  
+  rwi_00s_plot <- rwi_00s_filtered_wide %>%
+    filter(plot == current.plot)
+  
+  # format matrix for analysis
+  rwi_00s_plot <- as.matrix(rwi_00s_plot)
+  colnames(rwi_00s_plot) <- NULL
+  rwi_00s_plot <- rwi_00s_plot[, c(3:121)] 
+  
+  # convert character matrix to numeric
+  rwi_00s_plot = as.data.frame(rwi_00s_plot, stringsAsFactors = FALSE)
+  rwi_00s_plot = map_df(rwi_00s_plot, as.numeric)
+  rwi_00s_plot_mx <- as.matrix(rwi_00s_plot)
+  
+  # calculate wavelet
+  year <- 1900:2018
+  rwi_00s_plot_mx <- cleandat(rwi_00s_plot_mx, year, 1)
+  res<-wpmf(rwi_00s_plot_mx$cdat,year,sigmethod="quick")
+  
+  #extract raw values
+  M1 <- as.data.frame(res$values)
+  colnames(M1) <- res$timescales
+  #fix the imaginary #s
+  M1 <- abs(M1)
+  # define thresholds
+  sync <- temp[2]
+  sync <- as.numeric(sync)
+  async <- temp[1]
+  async <- as.numeric(async)
+  
+  M2 <- M1[,1:67]
+  M2$year <- year
+  # classify sync, async and ns
+  M2<- M2 %>%
+    pivot_longer(1:67, names_to = "ts", values_to = "values")
+  M2 <- na.omit(M2)
+  M2events <- M2 %>%
+    mutate(event = case_when(values >= sync ~ "synchronous",
+                             values <= async ~ "asynchronous",
+                             TRUE ~ "NS"))
+  
+  # classify timescale intervals
+  M2events$ts <- as.numeric(M2events$ts)
+  M2events$ts <- as.numeric(M2events$ts)
+  M2events <- M2events %>%
+    mutate(interval = case_when(ts >= 2 & ts <= 5 ~ "short",
+                                ts > 5 & ts <= 10 ~ "medium",
+                                ts > 10 & ts <= 20 ~ "long",
+                                ts > 20 & ts <= 30 ~ "ancient"))
+  
+  # make dataframe to save results
+  plot_current_results <- data.frame()
+  
+  
+  for (xx in 1:length(unique(M2events$interval))) {
+    
+    current <- unique(M2events$interval)[xx]
+    M2events_s <- M2events %>%
+      filter(interval == current)
+    
+    #significantly synchronous in the short term
+    SSs <- M2events_s %>%
+      filter(event == "synchronous")%>%
+      group_by(year)%>%
+      summarise(short_sync = n())
+    
+    #significantly asynchronous in the short term
+    SAs <- M2events_s %>%
+      filter(event == "asynchronous")%>%
+      group_by(year)%>%
+      summarise(short_async = n())
+    
+    #not significant in the short term
+    NSs <- M2events_s %>%
+      filter(event == "NS")%>%
+      group_by(year)%>%
+      summarise(short_NS = n())
+    
+    #the number of observations per year to divide by to get the proportion
+    prop_den_s <- M2events_s %>%
+      group_by(year)%>%
+      summarise(obs = n())
+    
+    # proportion synchronous
+    prop_calc_Ss <- left_join(prop_den_s, SSs)
+    prop_sync <- prop_calc_Ss %>%
+      group_by(year)%>%
+      summarise(synch = short_sync/obs)
+    
+    # proportion asynchronous
+    prop_calc_As <- left_join(prop_den_s, SAs)
+    prop_async <- prop_calc_As %>%
+      group_by(year)%>%
+      summarise(asynch = short_async/obs) 
+    
+    # proportion not significant
+    prop_calc_Ns <- left_join(prop_den_s, NSs)
+    prop_ns <- prop_calc_Ns %>%
+      group_by(year)%>%
+      summarise(ns = short_NS/obs)
+    
+    plot1_temp <- prop_sync %>%
+      full_join(prop_async, by="year") %>%
+      full_join(prop_ns, by="year")
+    
+    plot1_temp$interval <- current
+    plot1_temp$location <- current.plot
+    
+    ### RBIND FOR ROWS
+    plot_current_results <- rbind(plot_current_results, plot1_temp)
+    
+  }
+  
+  proportions_final <- rbind(proportions_final, plot_current_results)
+  
+}
+
+proportions_final[is.na(proportions_final)] <- 0
+
+proportions_final <- proportions_final %>%
+  rename(plot = "location")
+
+## WITHIN - PLOT PROPORTION STATS ##
+
+# -- fit spline models w/ plot as a random effect
+# -- had to change the optimization method to fit and scale the predictor variable, year
+# -- because I had to scale year, I then had to round to 2 decimal places to match with 'x'
+# -- after passing it through the ggpredict function to plot properly with the raw data
+library(lme4)
+
+proportions_final_scaled <- proportions_final %>%
+  mutate(scale_year = scale(year, center = TRUE, scale = TRUE))%>%
+  mutate(x= round(scale_year, digits = 2))
+
+proportions_final_scaled_s <- proportions_final_scaled %>%
+  filter(interval == "short")
+
+within_spline_9 <- glmer(synch ~ ns(x,9) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_8 <- glmer(synch ~ ns(x,8) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_7 <- glmer(synch ~ ns(x,7) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_6 <- glmer(synch ~ ns(x,6) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_5 <- glmer(synch ~ ns(x,5) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_4 <- glmer(synch ~ ns(x,4) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_3 <- glmer(synch ~ ns(x,3) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_2 <- glmer(synch ~ ns(x,2) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"),glmerControl(optimizer = "bobyqa"))
+within_lm <- glmer(synch ~ x + (1|plot), data = proportions_final_scaled_s,family = binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+
+
+aictable<-function(X,m){
+  rnames<-row.names(X)
+  AICc<-X$AIC+2*X$df*(X$df+1)/(m-X$df-1)     # Small-sample correction
+  logL<-X$df-X$AIC/2                         # Log-likelihood
+  tab<-data.frame(X[,1],logL,AICc)           # Remove AIC column; add logL and AICc
+  colnames(tab)[1]<-c("Params")              # Rename "df" column
+  row.names(tab)<-rnames
+  tab<-tab[order(tab$AICc),]                 # Sort by ascending AICc value
+  deltaAICc<-tab$AICc-min(tab$AICc)          # Delta AICc
+  weight<-exp(-deltaAICc/2)/sum(exp(-deltaAICc/2))  #Weights
+  cumwt<-weight                              # Column for cumulative weight
+  for(i in 2:dim(X)[1]){
+    cumwt[i]<-cumwt[i-1]+cumwt[i]            # Accumulate weight from the top
+  }
+  tab<-data.frame(tab,deltaAICc,weight,cumwt)
+  tab<-round(tab,4)
+  tab
+}
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_scaled_s)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 9 knots is best fit
+synchpredict_scaled_s <- ggpredict(within_spline_9, terms = "x [all]")
+synchpredict_scaled_s$interval <- "short"
+synchpredict_scaled_s <- full_join(synchpredict_scaled_s, proportions_final_scaled_s)
+
+# medium - term
+proportions_final_scaled_m <- proportions_final_scaled %>%
+  filter(interval == "medium")
+
+
+within_spline_9 <- glmer(synch ~ ns(x,9) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_8 <- glmer(synch ~ ns(x,8) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_7 <- glmer(synch ~ ns(x,7) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_6 <- glmer(synch ~ ns(x,6) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_5 <- glmer(synch ~ ns(x,5) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_4 <- glmer(synch ~ ns(x,4) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_3 <- glmer(synch ~ ns(x,3) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_2 <- glmer(synch ~ ns(x,2) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"),glmerControl(optimizer = "bobyqa"))
+within_lm <- glmer(synch ~ x + (1|plot), data = proportions_final_scaled_m,family = binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_scaled_m)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 7 knots is best fit
+synchpredict_scaled_m <- ggpredict(within_spline_7, terms = "x [all]")
+synchpredict_scaled_m$interval <- "medium"
+synchpredict_scaled_m <- full_join(synchpredict_scaled_m, proportions_final_scaled_m)
+
+# long - term
+proportions_final_scaled_l <- proportions_final_scaled %>%
+  filter(interval == "long")
+
+within_spline_9 <- glmer(synch ~ ns(x,9) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_8 <- glmer(synch ~ ns(x,8) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_7 <- glmer(synch ~ ns(x,7) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_6 <- glmer(synch ~ ns(x,6) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_5 <- glmer(synch ~ ns(x,5) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_4 <- glmer(synch ~ ns(x,4) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_3 <- glmer(synch ~ ns(x,3) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_2 <- glmer(synch ~ ns(x,2) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"),glmerControl(optimizer = "bobyqa"))
+within_lm <- glmer(synch ~ x + (1|plot), data = proportions_final_scaled_l,family = binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_scaled_l)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 8 knots is best fit
+synchpredict_scaled_l <- ggpredict(within_spline_8, terms = "x [all]")
+synchpredict_scaled_l$interval <- "long"
+synchpredict_scaled_l <- full_join(synchpredict_scaled_l, proportions_final_scaled_l)
+
+# xlong - term
+proportions_final_scaled_a <- proportions_final_scaled %>%
+  filter(interval == "ancient")
+
+within_spline_9 <- glmer(synch ~ ns(x,9) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_8 <- glmer(synch ~ ns(x,8) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_7 <- glmer(synch ~ ns(x,7) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_6 <- glmer(synch ~ ns(x,6) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_5 <- glmer(synch ~ ns(x,5) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_4 <- glmer(synch ~ ns(x,4) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_3 <- glmer(synch ~ ns(x,3) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_2 <- glmer(synch ~ ns(x,2) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"),glmerControl(optimizer = "bobyqa"))
+within_lm <- glmer(synch ~ x + (1|plot), data = proportions_final_scaled_a,family = binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_scaled_a)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 6 knots is best fit
+synchpredict_scaled_a <- ggpredict(within_spline_6, terms = "x [all]")
+synchpredict_scaled_a$interval <- "ancient"
+synchpredict_scaled_a <- full_join(synchpredict_scaled_a, proportions_final_scaled_a)
+
+
+
+synchpredict_within_scaled <- bind_rows(synchpredict_scaled_s,synchpredict_scaled_m,synchpredict_scaled_l,synchpredict_scaled_a)
+
+## VISUALIZE SPLINES ##
+library("ggeffects")
+library("purrr")
+
+proportions_final$interval_f <- factor(proportions_final$interval)
+synchpredict_within_scaled$interval_f <- factor(synchpredict_within_scaled$interval)
+
+
+ggplot()+
+  geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
+  geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  geom_jitter(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  xlab("Year")+
+  ylab("Synchronous events (annual proportion)")+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
+        axis.title.x = element_text(color = "black", size = 13, angle = 0, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
+        legend.title = element_text(color = "black", size = 13,face = "plain"),
+        legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
+  scale_color_discrete(name = "Timescale Band",
+                       labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                       guide = guide_legend(reverse = TRUE))+
+  scale_fill_discrete(name = "Timescale Band",
+                      labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                      guide = guide_legend(reverse = TRUE))
+
+
+
+ggplot()+
+  geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
+  geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  geom_jitter(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  xlab("Year")+
+  ylab("Synchronous events (annual proportion)")+
+  theme_bw()+
+  ylim(0,0.5)+
+  theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
+        axis.title.x = element_text(color = "black", size = 13, angle = 0, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
+        legend.title = element_text(color = "black", size = 13,face = "plain"),
+        legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
+  scale_color_discrete(name = "Timescale Band",
+                       labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                       guide = guide_legend(reverse = TRUE))+
+  scale_fill_discrete(name = "Timescale Band",
+                      labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                      guide = guide_legend(reverse = TRUE))
+
+
+
+## WITHIN - PLOT PROPORTION STATS ##
+
+# -- fit spline models w/o plot as a random effect
+
+# short term
+proportions_final_s <- proportions_final %>%
+  filter(interval == "short")
+
+within_spline_9 <- glm(synch ~ ns(year,9), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_8 <- glm(synch ~ ns(year,8), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_7 <- glm(synch ~ ns(year,7), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_6 <-  glm(synch ~ ns(year,6), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_5 <-  glm(synch ~ ns(year,5), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_4 <- glm(synch ~ ns(year,4), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_3 <- glm(synch ~ ns(year,3), data = proportions_final_s, family=binomial(link = "logit"))
+within_spline_2 <- glm(synch ~ ns(year,2), data = proportions_final_s, family=binomial(link = "logit"))
+within_lm <- glm(synch~ year, data = proportions_final_s,family = binomial(link = "logit"))
+
+aictable<-function(X,m){
+  rnames<-row.names(X)
+  AICc<-X$AIC+2*X$df*(X$df+1)/(m-X$df-1)     # Small-sample correction
+  logL<-X$df-X$AIC/2                         # Log-likelihood
+  tab<-data.frame(X[,1],logL,AICc)           # Remove AIC column; add logL and AICc
+  colnames(tab)[1]<-c("Params")              # Rename "df" column
+  row.names(tab)<-rnames
+  tab<-tab[order(tab$AICc),]                 # Sort by ascending AICc value
+  deltaAICc<-tab$AICc-min(tab$AICc)          # Delta AICc
+  weight<-exp(-deltaAICc/2)/sum(exp(-deltaAICc/2))  #Weights
+  cumwt<-weight                              # Column for cumulative weight
+  for(i in 2:dim(X)[1]){
+    cumwt[i]<-cumwt[i-1]+cumwt[i]            # Accumulate weight from the top
+  }
+  tab<-data.frame(tab,deltaAICc,weight,cumwt)
+  tab<-round(tab,4)
+  tab
+}
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_s)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 8 knots is best fit
+synchpredict_s <- ggpredict(within_spline_8, terms = "year [all]")
+synchpredict_s$interval <- "short"
+
+# medium - term
+proportions_final_m <- proportions_final %>%
+  filter(interval == "medium")
+
+within_spline_9 <- glm(synch ~ ns(year,9), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_8 <- glm(synch ~ ns(year,8), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_7 <- glm(synch ~ ns(year,7), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_6 <-  glm(synch ~ ns(year,6), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_5 <-  glm(synch ~ ns(year,5), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_4 <- glm(synch ~ ns(year,4), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_3 <- glm(synch ~ ns(year,3), data = proportions_final_m, family=binomial(link = "logit"))
+within_spline_2 <- glm(synch ~ ns(year,2), data = proportions_final_m, family=binomial(link = "logit"))
+within_lm <- glm(synch~ year, data = proportions_final_m,family = binomial(link = "logit"))
+
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_m)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 5 knots is best fit
+synchpredict_m <- ggpredict(within_spline_5, terms = "year [all]")
+synchpredict_m$interval <- "medium"
+
+# long - term
+proportions_final_l <- proportions_final %>%
+  filter(interval == "long")
+
+within_spline_9 <- glm(synch ~ ns(year,9), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_8 <- glm(synch ~ ns(year,8), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_7 <- glm(synch ~ ns(year,7), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_6 <-  glm(synch ~ ns(year,6), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_5 <-  glm(synch ~ ns(year,5), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_4 <- glm(synch ~ ns(year,4), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_3 <- glm(synch ~ ns(year,3), data = proportions_final_l, family=binomial(link = "logit"))
+within_spline_2 <- glm(synch ~ ns(year,2), data = proportions_final_l, family=binomial(link = "logit"))
+within_lm <- glm(synch~ year, data = proportions_final_l,family = binomial(link = "logit"))
+
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_l)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 4 knots is best fit
+synchpredict_l <- ggpredict(within_spline_4, terms = "year [all]")
+synchpredict_l$interval <- "long"
+
+# xlong - term
+proportions_final_a <- proportions_final %>%
+  filter(interval == "ancient")
+
+within_spline_9 <- glm(synch ~ ns(year,9), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_8 <- glm(synch ~ ns(year,8), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_7 <- glm(synch ~ ns(year,7), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_6 <-  glm(synch ~ ns(year,6), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_5 <-  glm(synch ~ ns(year,5), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_4 <- glm(synch ~ ns(year,4), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_3 <- glm(synch ~ ns(year,3), data = proportions_final_a, family=binomial(link = "logit"))
+within_spline_2 <- glm(synch ~ ns(year,2), data = proportions_final_a, family=binomial(link = "logit"))
+within_lm <- glm(synch~ year, data = proportions_final_a,family = binomial(link = "logit"))
+
+
+rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_spline_5,within_spline_6,within_spline_7,within_spline_8,within_spline_9)
+nR <- dim(proportions_final_a)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# spline with 5 knots is best fit
+synchpredict_a <- ggpredict(within_spline_5, terms = "year [all]")
+synchpredict_a$interval <- "ancient"
+
+
+synchpredict_within <- bind_rows(synchpredict_s,synchpredict_m,synchpredict_l,synchpredict_a)
+
+## VISUALIZE SPLINES ##
+library("ggeffects")
+library("purrr")
+
+proportions_final$interval_f <- factor(proportions_final$interval)
+synchpredict_within$interval_f <- factor(synchpredict_within$interval)
+
+ggplot()+
+  geom_line(data = synchpredict_within, aes(x=x, y=predicted, col = interval), size = 1)+
+  geom_ribbon(data = synchpredict_within, aes(x=x, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  #geom_point(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.5, shape = 1)+
   xlab("Year")+
   ylab("Synchronous events (annual proportion)")+
   theme_bw()+
@@ -891,4 +1373,47 @@ ggplot()+
   scale_fill_discrete(name = "Timescale Band",
                       labels = c("ancient", "long", "medium", "short"),
                       guide = guide_legend(reverse = TRUE))
+
+
+# -- check fit with plot as random vs. not random effect
+
+# short
+within_spline_9 <- glmer(synch ~ ns(x,9) + (1|plot), data = proportions_final_scaled_s, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_8 <- glm(synch ~ ns(year,8), data = proportions_final_s, family=binomial(link = "logit"))
+rawaic <- AIC(within_spline_8,within_spline_9)
+nR <- dim(proportions_final_s)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# -- within_spline_9 is better fit
+
+# med
+within_spline_7 <- glmer(synch ~ ns(x,7) + (1|plot), data = proportions_final_scaled_m, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_5 <-  glm(synch ~ ns(year,5), data = proportions_final_m, family=binomial(link = "logit"))
+rawaic <- AIC(within_spline_7,within_spline_5)
+nR <- dim(proportions_final_m)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# -- within_spline_7 is better fit
+
+# long
+within_spline_8 <- glmer(synch ~ ns(x,8) + (1|plot), data = proportions_final_scaled_l, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_4 <- glm(synch ~ ns(year,4), data = proportions_final_l, family=binomial(link = "logit"))
+rawaic <- AIC(within_spline_8,within_spline_4)
+nR <- dim(proportions_final_l)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# -- within_spline_8 is better fit
+
+# ancient
+within_spline_6 <- glmer(synch ~ ns(x,6) + (1|plot), data = proportions_final_scaled_a, family=binomial(link = "logit"), glmerControl(optimizer = "bobyqa"))
+within_spline_5 <-  glm(synch ~ ns(year,5), data = proportions_final_a, family=binomial(link = "logit"))
+rawaic <- AIC(within_spline_6,within_spline_5)
+nR <- dim(proportions_final_a)[1]
+aic_output <- aictable(rawaic,nR)
+aic_output[1,]
+# -- within_spline_6 is better fit
+
+# -- overall modeling plot as a random effect is better model fit
+
+
 
