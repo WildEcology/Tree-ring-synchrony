@@ -144,6 +144,18 @@ wateryear = map_df(wateryear, as.numeric)
 wateryear_mx <- as.matrix(wateryear)
 
 
+#### TMAX WAVELET ####
+times <- 1901:2018
+tmax_mx <- cleandat(tmax_mx, times, 1)$cdat
+res<-wpmf(tmax_mx,times,sigmethod="quick")
+plotmag(res)
+
+#### WATER-YEAR WAVELET ####
+times <- 1901:2018
+wateryear_mx <- cleandat(wateryear_mx, times, 1)$cdat
+res<-wpmf(wateryear_mx,times,sigmethod="quick")
+plotmag(res)
+
 #### ACROSS PLOT WAVELET ####
 times <- 1901:2018
 avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
@@ -158,7 +170,7 @@ avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
 tmax_mx <- cleandat(tmax_mx, times,1)$cdat
 
 res_tmax <- coh(dat1 = tmax_mx, dat2=avg_plot_growth_mx, times=times,norm="powall",
-                sigmethod = "fast", nrand=1000)
+                sigmethod = "fast", nrand=10000)
 plotmag(res_tmax)
 
 short <- c(2,5)
@@ -187,7 +199,7 @@ wateryear_mx <- cleandat(wateryear_mx, times,1)$cdat
 
 
 res_wateryear <- coh(dat1 = wateryear_mx, dat2 = avg_plot_growth_mx, times=times, norm="powall",
-                     sigmethod = "fast", nrand=1000)
+                     sigmethod = "fast", nrand=10000)
 
 plotmag(res_wateryear)
 
@@ -217,7 +229,7 @@ tmax_mx <- cleandat(tmax_mx, times,1)$cdat
 wateryear_mx <- cleandat(wateryear_mx, times,1)$cdat
 
 res_wateryear_tmax <- coh(dat1 = wateryear_mx, dat2 = tmax_mx, times=times, norm="powall",
-                     sigmethod = "fast", nrand=1000)
+                     sigmethod = "fast", nrand=10000)
 
 plotmag(res_wateryear_tmax)
 
@@ -749,7 +761,7 @@ final_timeseries <- new_timeseries %>%
 
 # fit spline glms w/ binomal distributions & test different number of knots
 
-proportions_final <- inner_join(prop_sync_final, final_timeseries)
+prop_sync_final_newts <- inner_join(prop_sync_final, final_timeseries)
 
 # short term
 prop_sync_final_s <- prop_sync_final_newts %>%
@@ -811,8 +823,8 @@ rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_
 nR <- dim(prop_sync_final_m)[1]
 aic_output <- aictable(rawaic,nR)
 aic_output[1,]
-# spline with 5 knots is best fit
-synchpredict_m <- ggpredict(within_spline_5, terms = "year [all]")
+# spline with 6 knots is best fit
+synchpredict_m <- ggpredict(within_spline_6, terms = "year [all]")
 synchpredict_m$interval <- "medium"
 
 # long - term
@@ -867,28 +879,34 @@ synchpredict_across <- bind_rows(synchpredict_s,synchpredict_m,synchpredict_l,sy
 ## VISUALIZE SPLINES ##
 library("ggeffects")
 library("purrr")
+library("wesanderson")
+
 
 prop_sync_final_newts$interval_f <- factor(prop_sync_final_newts$interval)
 synchpredict_across$interval_f <- factor(synchpredict_across$interval)
 
+fanmrfox <- c("#E2D200", "#46ACC8", "#E58601", "#B40F20")
+
 ggplot()+
   geom_line(data = synchpredict_across, aes(x=x, y=predicted, col = interval), size = 1)+
   geom_ribbon(data = synchpredict_across, aes(x=x, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
-  geom_point(data = prop_sync_final_newts, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  geom_jitter(data = prop_sync_final_newts, aes(x=year, y=synch, col=interval), alpha = 0.2, shape = 1)+
   xlab("Year")+
-  ylab("Synchronous events (annual proportion)")+
-  theme_bw()+
+  ylab("Synchrony (Proportion Significant)")+
+  theme_classic()+
   theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
         axis.title.x = element_text(color = "black", size = 13, angle = 0, face = "plain"),
         axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
         legend.title = element_text(color = "black", size = 13,face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
-  scale_color_discrete(name = "Timescale Band",
-                       labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
-                       guide = guide_legend(reverse = TRUE))+
-  scale_fill_discrete(name = "Timescale Band",
-                      labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+  scale_color_manual(values = fanmrfox,
+                     name = "Timescale Band",
+                     labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                     guide = guide_legend(reverse = TRUE))+
+  scale_fill_manual(values = fanmrfox,
+                      name = "Timescale Band",
+                      labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
                       guide = guide_legend(reverse = TRUE))
 
 
@@ -1150,8 +1168,8 @@ rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_
 nR <- dim(proportions_final_scaled_l)[1]
 aic_output <- aictable(rawaic,nR)
 aic_output[1,]
-# spline with 8 knots is best fit
-synchpredict_scaled_l <- ggpredict(within_spline_8, terms = "x [all]")
+# spline with 7 knots is best fit
+synchpredict_scaled_l <- ggpredict(within_spline_7, terms = "x [all]")
 synchpredict_scaled_l$interval <- "long"
 synchpredict_scaled_l <- full_join(synchpredict_scaled_l, proportions_final_scaled_l)
 
@@ -1174,7 +1192,7 @@ rawaic <- AIC(within_lm,within_spline_2, within_spline_3,within_spline_4,within_
 nR <- dim(proportions_final_scaled_a)[1]
 aic_output <- aictable(rawaic,nR)
 aic_output[1,]
-# spline with 6 knots is best fit
+# spline with 5 knots is best fit
 synchpredict_scaled_a <- ggpredict(within_spline_6, terms = "x [all]")
 synchpredict_scaled_a$interval <- "ancient"
 synchpredict_scaled_a <- full_join(synchpredict_scaled_a, proportions_final_scaled_a)
@@ -1196,7 +1214,7 @@ ggplot()+
   geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
   geom_jitter(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
   xlab("Year")+
-  ylab("Synchronous events (annual proportion)")+
+  ylab("Synchrony (Proportion Significant)")+
   theme_bw()+
   theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
@@ -1204,12 +1222,14 @@ ggplot()+
         axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
         legend.title = element_text(color = "black", size = 13,face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
-  scale_color_discrete(name = "Timescale Band",
-                       labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
-                       guide = guide_legend(reverse = TRUE))+
-  scale_fill_discrete(name = "Timescale Band",
-                      labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
-                      guide = guide_legend(reverse = TRUE))
+  scale_color_manual(values = fanmrfox,
+                     name = "Timescale Band",
+                     labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                     guide = guide_legend(reverse = TRUE))+
+  scale_fill_manual(values = fanmrfox,
+                    name = "Timescale Band",
+                    labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                    guide = guide_legend(reverse = TRUE))
 
 
 
@@ -1219,7 +1239,7 @@ ggplot()+
   geom_jitter(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
   xlab("Year")+
   ylab("Synchronous events (annual proportion)")+
-  theme_bw()+
+  theme_classic()+
   ylim(0,0.5)+
   theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
@@ -1227,12 +1247,15 @@ ggplot()+
         axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
         legend.title = element_text(color = "black", size = 13,face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
-  scale_color_discrete(name = "Timescale Band",
-                       labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
-                       guide = guide_legend(reverse = TRUE))+
-  scale_fill_discrete(name = "Timescale Band",
-                      labels = c("Ancient (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
-                      guide = guide_legend(reverse = TRUE))
+  scale_color_manual(values = fanmrfox,
+                     name = "Timescale Band",
+                     labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                     guide = guide_legend(reverse = TRUE))+
+  scale_fill_manual(values = fanmrfox,
+                    name = "Timescale Band",
+                    labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                    guide = guide_legend(reverse = TRUE))
+
 
 
 
