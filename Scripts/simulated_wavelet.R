@@ -49,7 +49,7 @@ dat_df$year <- as.numeric(dat_df$year)
 dat_df$plot <- as.character(dat_df$plot)
 
 plot810 <- dat_df %>%
-  filter(plot == 8 | plot == 10)
+  filter(plot == 1 | plot == 6)
 
 fanmrfox <- c("#46ACC8", "#E58601", "#B40F20")
 
@@ -66,7 +66,7 @@ ggplot(plot810, aes(x=year, y=rwi, group = plot, col = plot))+
   scale_color_manual(values = fanmrfox,
                      name = "Population",
                      labels = c("North", "South"))+
-  scale_x_continuous(limits = c(1965,1990))+
+  #scale_x_continuous(limits = c(1965,1990))+
   xlab("Year")+
   ylab("Annual Growth")
 

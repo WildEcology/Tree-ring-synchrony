@@ -1077,6 +1077,8 @@ proportions_final <- proportions_final %>%
 # -- because I had to scale year, I then had to round to 2 decimal places to match with 'x'
 # -- after passing it through the ggpredict function to plot properly with the raw data
 library(lme4)
+library(splines)
+library(ggeffects)
 
 proportions_final_scaled <- proportions_final %>%
   mutate(scale_year = scale(year, center = TRUE, scale = TRUE))%>%
@@ -1215,7 +1217,7 @@ ggplot()+
   geom_jitter(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
   xlab("Year")+
   ylab("Synchrony (Proportion Significant)")+
-  theme_bw()+
+  theme_classic()+
   theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
         axis.title.x = element_text(color = "black", size = 13, angle = 0, face = "plain"),
