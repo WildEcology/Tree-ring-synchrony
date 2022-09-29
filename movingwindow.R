@@ -194,9 +194,6 @@ tmax_coherence <- tmax_coherence %>%
 
 ## RWI & WATER-YEAR ##
 times <- 1:118
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
-wateryear_mx <- cleandat(wateryear_mx, times,1)$cdat
-
 
 res_wateryear <- coh(dat1 = wateryear_mx, dat2 = avg_plot_growth_mx, times=times, norm="powall",
                      sigmethod = "fast", nrand=10000)
@@ -225,8 +222,7 @@ wateryear_coherence <- wateryear_coherence %>%
 
 ## TMAX & WATER-YEAR ##
 times <- 1:118
-tmax_mx <- cleandat(tmax_mx, times,1)$cdat
-wateryear_mx <- cleandat(wateryear_mx, times,1)$cdat
+
 
 res_wateryear_tmax <- coh(dat1 = wateryear_mx, dat2 = tmax_mx, times=times, norm="powall",
                      sigmethod = "fast", nrand=10000)
@@ -252,11 +248,9 @@ wateryear_tmax_coherence <- wateryear_tmax_coherence %>%
   mutate(sig = case_when(p_val >= 0.05 ~ "non",
                          p_val <= 0.05 ~ "sig"))
 
+
 #### WAVELET LINEAR MODEL ####
 times <- 1:118
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
-tmax_mx <- cleandat(tmax_mx, times,1)$cdat
-wateryear_mx <- cleandat(wateryear_mx, times,1)$cdat
 dat<-list(rwi=avg_plot_growth_mx,wateryear=wateryear_mx,tmax=tmax_mx)
 
 # create model
@@ -1441,4 +1435,22 @@ aic_output[1,]
 # -- overall modeling plot as a random effect is better model fit
 
 
+#### RAW DATA ###
+
+
+raw_temp <- ggplot(data = avg_plot_tmax_long , aes(x=year, y=avg_tmax, group = plot, col = plot))+
+  geom_point(size = 1)+
+  geom_smooth(method = "lm", se = FALSE)+
+  #geom_point(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.5, shape = 1)+
+  xlab("Year")+
+  ylab("Avg TMAX")+
+  theme_classic()
+
+raw_precip <- ggplot(data = water_year_long , aes(x=year, y=wy_ppt, group = plot, col = plot))+
+  geom_point(size = 1)+
+  geom_smooth(method = "lm", se = FALSE)+
+  #geom_point(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.5, shape = 1)+
+  xlab("Year")+
+  ylab("Avg Precip")+
+  theme_classic()
 
