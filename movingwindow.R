@@ -92,6 +92,7 @@ tmax <- as.matrix(avg_plot_tmax)
 colnames(tmax) <- NULL
 tmax <- tmax[, c(2:119)] # timeseries 1901-2018
 
+
 # convert character matrix to numeric
 tmax = as.data.frame(tmax, stringsAsFactors = FALSE)
 tmax = map_df(tmax, as.numeric)
@@ -122,10 +123,13 @@ match_plots_rwi <- unique(rwi_00s_filtered_wide$plot)
 water_year_filtered <- ppt_month_plot_update %>%
   filter(plot2 %in% match_plots_rwi)
 
-water_year_wide <- water_year_filtered %>%
+water_year_avg <- water_year_filtered %>%
   filter(month == c(1, 2, 3, 4, 5, 10, 11, 12))%>%
+  filter(type == "ppt")%>%
   group_by(plot2, wateryear)%>%
-  summarize(mean_ppt = mean(value))%>%
+  summarize(mean_ppt = mean(value))
+  
+water_year_wide <- water_year_avg %>%
   pivot_wider(names_from = wateryear, values_from = mean_ppt, id_cols = plot2)%>%
   select(-c("1900", "2019", "2020"))%>%
   rename(plot = plot2)
@@ -143,22 +147,37 @@ wateryear = as.data.frame(wateryear, stringsAsFactors = FALSE)
 wateryear = map_df(wateryear, as.numeric)
 wateryear_mx <- as.matrix(wateryear)
 
+## VPD-MAX ##
+
+vpd_filtered <- ppt_month_plot_update %>%
+  filter(plot2 %in% match_plots_rwi)
+
+vpd_wide <- vpd_filtered%>%
+  filter(type == "vpd_max")
+  group_by(plot2, year)%>%
+  summarize(mean_vpd_max = mean(value))%>%
+  pivot_wider(names_from = year, values_from = mean_vpd_max, id_cols = plot2)%>%
+  select(-c("1900", "2019", "2020"))%>%
+  rename(plot = plot2)
+
+
+
 
 #### TMAX WAVELET ####
 times <- 1901:2018
-tmax_mx <- cleandat(tmax_mx, times, 1)$cdat
+tmax_mx <- cleandat(tmax_mx, times, clev = 5)$cdat
 res<-wpmf(tmax_mx,times,sigmethod="quick")
 plotmag(res)
 
 #### WATER-YEAR WAVELET ####
 times <- 1901:2018
-wateryear_mx <- cleandat(wateryear_mx, times, 1)$cdat
+wateryear_mx <- cleandat(wateryear_mx, times, clev = 5)$cdat
 res<-wpmf(wateryear_mx,times,sigmethod="quick")
 plotmag(res)
 
 #### ACROSS PLOT WAVELET ####
 times <- 1901:2018
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
+avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, clev = 5)$cdat
 res<-wpmf(avg_plot_growth_mx,times,sigmethod="quick")
 plotmag(res)
 
@@ -166,9 +185,6 @@ plotmag(res)
 
 ## RWI & TMAX ##
 times <- 1:118
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
-tmax_mx <- cleandat(tmax_mx, times,1)$cdat
-
 res_tmax <- coh(dat1 = tmax_mx, dat2=avg_plot_growth_mx, times=times,norm="powall",
                 sigmethod = "fast", nrand=10000)
 plotmag(res_tmax)
@@ -194,7 +210,6 @@ tmax_coherence <- tmax_coherence %>%
 
 ## RWI & WATER-YEAR ##
 times <- 1:118
-
 res_wateryear <- coh(dat1 = wateryear_mx, dat2 = avg_plot_growth_mx, times=times, norm="powall",
                      sigmethod = "fast", nrand=10000)
 
@@ -617,7 +632,7 @@ avg_plot_growth_mx <- as.matrix(avg_plot_growth_wide)
 
 # across plot wavelet 
 times <- 1900:2018
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, 1)$cdat
+avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, clev = 5)$cdat
 res<-wpmf(avg_plot_growth_mx,times,sigmethod="quick")
 plotmag(res)
 
@@ -1226,7 +1241,30 @@ ggplot()+
                     name = "Timescale Band",
                     labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
                     guide = guide_legend(reverse = TRUE))
-
+ggplot()+
+  #geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
+  #geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  #geom_jitter(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  geom_ribbon(data = proportions_final, aes(x=year, y=synch, fill=interval), stat='smooth', method = "loess", se=TRUE, alpha=0.25) +
+  geom_line(data = proportions_final, aes(x=year, y=synch, col=interval),size = 1.5,stat='smooth', method = "loess")+
+  #geom_smooth(data = proportions_final, aes(x=year, y=synch, col=interval, fill=interval))+
+  xlab("Year")+
+  ylab("Synchronous events (annual proportion)")+
+  theme_classic()+
+  theme(axis.text.x = element_text(color = "grey20", size = 2, angle = 0, hjust = -0.1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 20, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
+        axis.title.x = element_text(color = "black", size = 22, angle = 0, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 22, angle = 90, face = "plain"),
+        legend.title = element_text(color = "black", size = 22,face = "plain"),
+        legend.text = element_text(color = "grey20", size = 20,face = "plain"))+
+  scale_color_manual(values = fanmrfox,
+                     name = "Timescale Band",
+                     labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                     guide = guide_legend(reverse = TRUE))+
+  scale_fill_manual(values = fanmrfox,
+                    name = "Timescale Band",
+                    labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
+                    guide = guide_legend(reverse = TRUE))
 
 
 ggplot()+
@@ -1439,18 +1477,29 @@ aic_output[1,]
 
 
 raw_temp <- ggplot(data = avg_plot_tmax_long , aes(x=year, y=avg_tmax, group = plot, col = plot))+
-  geom_point(size = 1)+
-  geom_smooth(method = "lm", se = FALSE)+
-  #geom_point(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.5, shape = 1)+
+  # geom_point(size = 1)+
+  geom_line()+
+  # geom_smooth(method = "lm", se = FALSE)+
   xlab("Year")+
   ylab("Avg TMAX")+
-  theme_classic()
+  theme_classic()+
+  scale_x_discrete(breaks=seq(1901, 2018, 5)) 
 
 raw_precip <- ggplot(data = water_year_long , aes(x=year, y=wy_ppt, group = plot, col = plot))+
-  geom_point(size = 1)+
-  geom_smooth(method = "lm", se = FALSE)+
-  #geom_point(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.5, shape = 1)+
+  # geom_point(size = 1)+
+  geom_line()+
+  # geom_smooth(method = "lm", se = FALSE)+
   xlab("Year")+
   ylab("Avg Precip")+
-  theme_classic()
+  theme_classic()+
+  scale_x_discrete(breaks=seq(1901, 2018, 5))
+
+raw_growth <- ggplot(data = avg_plot_growth , aes(x=year, y=avg_growth, group = plot, col = plot))+
+  # geom_point(size = 1)+
+  geom_line()+
+  # geom_smooth(method = "lm", se = FALSE)+
+  xlab("Year")+
+  ylab("Avg growth")+
+  theme_classic()+
+  scale_x_discrete(breaks=seq(1901, 2018, 5))
 
