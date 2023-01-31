@@ -153,14 +153,25 @@ vpd_filtered <- ppt_month_plot_update %>%
   filter(plot2 %in% match_plots_rwi)
 
 vpd_wide <- vpd_filtered%>%
-  filter(type == "vpd_max")
+  filter(type == "vpdmax")%>%
   group_by(plot2, year)%>%
   summarize(mean_vpd_max = mean(value))%>%
   pivot_wider(names_from = year, values_from = mean_vpd_max, id_cols = plot2)%>%
   select(-c("1900", "2019", "2020"))%>%
   rename(plot = plot2)
 
+vpd_long <- vpd_wide %>%
+  pivot_longer(2:119, names_to = "year", values_to = "wy_ppt")
 
+# format matrix for analysis
+vpd <- as.matrix(vpd_wide)
+colnames(vpd) <- NULL
+vpd <- vpd[, c(2:119)]
+
+# convert character matrix to numeric
+vpd = as.data.frame(vpd, stringsAsFactors = FALSE)
+vpd = map_df(vpd, as.numeric)
+vpd_mx <- as.matrix(vpd)
 
 
 #### TMAX WAVELET ####
@@ -173,6 +184,12 @@ plotmag(res)
 times <- 1901:2018
 wateryear_mx <- cleandat(wateryear_mx, times, clev = 5)$cdat
 res<-wpmf(wateryear_mx,times,sigmethod="quick")
+plotmag(res)
+
+#### VPD WAVELET ####
+times <- 1901:2018
+vpd_mx <- cleandat(vpd_mx, times, clev = 5)$cdat
+res<-wpmf(vpd_mx,times,sigmethod="quick")
 plotmag(res)
 
 #### ACROSS PLOT WAVELET ####
@@ -264,7 +281,38 @@ wateryear_tmax_coherence <- wateryear_tmax_coherence %>%
                          p_val <= 0.05 ~ "sig"))
 
 
+## VPD & RWI ##
+
+times <- 1:118
+res_vpd <- coh(dat1 = vpd_mx, dat2=avg_plot_growth_mx, times=times,norm="powall",
+                sigmethod = "fast", nrand=10000)
+plotmag(res_vpd)
+
+short <- c(2,5)
+medium <- c(5,10)
+long <- c(10,20)
+xlong <- c(20,30)
+
+res_vpd<-bandtest(res_vpd,short)
+res_vpd<-bandtest(res_vpd,medium)
+res_vpd<-bandtest(res_vpd,long)
+res_vpd<-bandtest(res_vpd,xlong)
+vpd_coherence <- get_bandp(res_vpd)
+
+vpd_coherence <- vpd_coherence %>%
+  mutate(phase_test = (mn_phs/pi))%>%
+  mutate(phase = case_when(phase_test <= 0.25 ~ "in",
+                           phase_test >= 0.25 & phase_test <= 0.75 ~ "lag",
+                           phase_test >= 0.75 ~ "anti"))%>%
+  mutate(sig = case_when(p_val >= 0.05 ~ "non",
+                         p_val <= 0.05 ~ "sig"))
+
+
+
+
+
 #### WAVELET LINEAR MODEL ####
+## RWI & TMAX & WATERYEAR ##
 times <- 1:118
 dat<-list(rwi=avg_plot_growth_mx,wateryear=wateryear_mx,tmax=tmax_mx)
 
@@ -289,6 +337,7 @@ wlm_all_drop_tmax<-bandtest(wlm_all_drop_tmax,short)
 wlm_all_drop_tmax<-bandtest(wlm_all_drop_tmax,medium)
 wlm_all_drop_tmax<-bandtest(wlm_all_drop_tmax,long)
 wlm_all_drop_tmax<-bandtest(wlm_all_drop_tmax,xlong)
+
 wlm_wy <- get_bandp(wlm_all_drop_wy) %>%
   mutate(sig = case_when(p_val >= 0.05 ~ "non",
                          p_val <= 0.05 ~ "sig"))
@@ -315,10 +364,57 @@ se_long_output <- data.frame(round(100*colMeans(se_long[,c(3:9)])/mean(se_long$s
 se_xlong <- se[se$timescales>=xlong[1] & se$timescales<=xlong[2],]
 se_xlong_output <- data.frame(round(100*colMeans(se_xlong[,c(3:9)])/mean(se_xlong$sync),2))
 
+sync_explained_tmax_wy <- cbind(se_short_output, se_medium_output, se_long_output, se_xlong_output)
+names(sync_explained_tmax_wy) <- c("short", "medium", "long", "xlong")
+
+pres<-predsync(wlm_all)
+plotmag(pres)
+
+
+## RWI & VPD## 
+times <- 1:118
+dat<-list(rwi=avg_plot_growth_mx,vpd=vpd_mx)
+
+# create model
+wlm_all<-wlm(dat,times,resp=1,pred=2,norm="powall")
+wlm_all_drop_vpd<-wlmtest(wlm_all,drop="vpd",sigmethod="fft",nrand=1000)
+
+short <- c(2,5)
+medium <- c(5,10)
+long <- c(10,20)
+xlong <- c(20,30)
+
+wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,short)
+wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,medium)
+wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,long)
+wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,xlong)
+
+wlm_vpd <- get_bandp(wlm_all_drop_vpd)%>%
+  mutate(sig = case_when(p_val >= 0.05 ~ "non",
+                         p_val <= 0.05 ~ "sig"))
+
+plotmag(wlm_all_drop_vpd)
+plotrank(wlm_all_drop_vpd)
+
+
+se <- syncexpl(wlm_all)
+se_short <- se[se$timescales>=short[1] & se$timescales<=short[2],]
+se_short_output <- data.frame(round(100*colMeans(se_short[,c(3:9)])/mean(se_short$sync),2))
+
+se_medium <- se[se$timescales>=medium[1] & se$timescales<=medium[2],]
+se_medium_output <- data.frame(round(100*colMeans(se_medium[,c(3:9)])/mean(se_medium$sync),2))
+
+se_long <- se[se$timescales>=long[1] & se$timescales<=long[2],]
+se_long_output <- data.frame(round(100*colMeans(se_long[,c(3:9)])/mean(se_long$sync),2))
+
+se_xlong <- se[se$timescales>=xlong[1] & se$timescales<=xlong[2],]
+se_xlong_output <- data.frame(round(100*colMeans(se_xlong[,c(3:9)])/mean(se_xlong$sync),2))
+
 sync_explained <- cbind(se_short_output, se_medium_output, se_long_output, se_xlong_output)
 names(sync_explained) <- c("short", "medium", "long", "xlong")
 
-
+pres<-predsync(wlm_all)
+plotmag(pres)
 #### MOVING WINDOW COHERENCE ####
 
 ## RWI & WATER-YEAR ##
