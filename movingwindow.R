@@ -111,6 +111,7 @@ ppt_month <- ppt_month %>%
                                month == "11" ~ year+1,
                                month == "12" ~ year+1,
                                TRUE ~ as.numeric(year)))
+
 # fix plot names in data to match rwi data
 ppt_month_plot_update<- ppt_month %>%
   mutate(plot2 = case_when(plot == "RC_NA" ~ "RC",
@@ -127,7 +128,7 @@ water_year_avg <- water_year_filtered %>%
   filter(month == c(1, 2, 3, 4, 5, 10, 11, 12))%>%
   filter(type == "ppt")%>%
   group_by(plot2, wateryear)%>%
-  summarize(mean_ppt = mean(value))
+  summarize(total_ppt = sum(value))
   
 water_year_wide <- water_year_avg %>%
   pivot_wider(names_from = wateryear, values_from = mean_ppt, id_cols = plot2)%>%
@@ -161,7 +162,7 @@ vpd_wide <- vpd_filtered%>%
   rename(plot = plot2)
 
 vpd_long <- vpd_wide %>%
-  pivot_longer(2:119, names_to = "year", values_to = "wy_ppt")
+  pivot_longer(2:119, names_to = "year", values_to = "avg_vpd")
 
 # format matrix for analysis
 vpd <- as.matrix(vpd_wide)
@@ -427,7 +428,7 @@ times <- 1:50
 short <- c(2,5)
 medium <- c(5,10)
 long <- c(10,20)
-
+xlong <- c(20,30)
 wy_coh_window <- tibble()
 
 for(i in start_year:end_year){
@@ -455,15 +456,16 @@ for(i in start_year:end_year){
     pivot_wider(names_from = "year", values_from = "avg_growth", id_cols=plot)
   rwi_window<- as.matrix(rwi_window)
   colnames(rwi_window) <- NULL
-  rwi_window <- rwi_window[, c(2:51)] 
+  rwi_window <- rwi_window[, 2:51] 
   rwi_window = as.data.frame(rwi_window, stringsAsFactors = FALSE)
   rwi_window = map_df(rwi_window, as.numeric)
   rwi_mx <- as.matrix(rwi_window)
   
   
+  
   # COH
-  rwi_mx <- cleandat(rwi_mx, times,1)$cdat
-  wateryear_mx <- cleandat(wateryear_mx, times,1)$cdat
+  rwi_mx <- cleandat(rwi_mx, times,5)$cdat
+  wateryear_mx <- cleandat(wateryear_mx, times,5)$cdat
 
   res_wateryear <- coh(dat1 = wateryear_mx, dat2 = rwi_mx, times=times, norm="powall",
                        sigmethod = "fast", nrand=1000)
@@ -471,6 +473,7 @@ for(i in start_year:end_year){
   res_wateryear<-bandtest(res_wateryear,short)
   res_wateryear<-bandtest(res_wateryear,medium)
   res_wateryear<-bandtest(res_wateryear,long)
+  #res_wateryear<-bandtest(res_wateryear,xlong)
   wateryear_coherence <- get_bandp(res_wateryear)
   
   wateryear_coherence <- wateryear_coherence %>%
@@ -499,7 +502,7 @@ times <- 1:50
 short <- c(2,5)
 medium <- c(5,10)
 long <- c(10,20)
-
+xlong <- c(20,30)
 tmax_coh_window <- tibble()
 
 for(i in start_year:end_year){
@@ -534,8 +537,8 @@ for(i in start_year:end_year){
   
   
   # COH
-  rwi_mx <- cleandat(rwi_mx, times, 1)$cdat
-  tmax_mx <- cleandat(tmax_mx, times,1)$cdat
+  rwi_mx <- cleandat(rwi_mx, times, 5)$cdat
+  tmax_mx <- cleandat(tmax_mx, times,5)$cdat
   
   res_tmax <- coh(dat1 = tmax_mx, dat2 = rwi_mx, times=times, norm="powall",
                        sigmethod = "fast", nrand=1000)
@@ -543,6 +546,7 @@ for(i in start_year:end_year){
   res_tmax<-bandtest(res_tmax,short)
   res_tmax<-bandtest(res_tmax,medium)
   res_tmax<-bandtest(res_tmax,long)
+  #res_tmax<-bandtest(res_tmax,xlong)
   tmax_coherence <- get_bandp(res_tmax)
   
   tmax_coherence <- tmax_coherence %>%
@@ -560,11 +564,12 @@ for(i in start_year:end_year){
   
 }
 
+
 ## FIND SIG WINDOWS ##
-wy_coh_sig <- wy_coh_window %>%
+wy_coh_sig_50 <- wy_coh_window %>%
   filter(sig == "sig")
 
-tmax_coh_sig <- tmax_coh_window %>%
+tmax_coh_sig_50 <- tmax_coh_window %>%
   filter(sig == "sig")
 
 
@@ -626,9 +631,9 @@ for(i in start_year:end_year){
   rwi_mx <- as.matrix(rwi_window)
   
   
-  # WLM
+  # TMAX WY RWI WLM
   dat<-list(rwi=rwi_mx,wy=wateryear_mx,tmax=tmax_mx)
-  dat<-lapply(FUN=function(x){cleandat(x,times,1)$cdat},X=dat)
+  dat<-lapply(FUN=function(x){cleandat(x,times,5)$cdat},X=dat)
   wlm_all<-wlm(dat,times,resp=1,pred=2:3,norm="powall")
   
   # SYNCHRONY EXPLAINED
@@ -993,18 +998,19 @@ synchpredict_across$interval_f <- factor(synchpredict_across$interval)
 fanmrfox <- c("#E2D200", "#46ACC8", "#E58601", "#B40F20")
 
 ggplot()+
-  geom_line(data = synchpredict_across, aes(x=x, y=predicted, col = interval), size = 1)+
-  geom_ribbon(data = synchpredict_across, aes(x=x, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  #geom_line(data = synchpredict_across, aes(x=x, y=predicted, col = interval), size = 1)+
+  #geom_ribbon(data = synchpredict_across, aes(x=x, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
   geom_jitter(data = prop_sync_final_newts, aes(x=year, y=synch, col=interval), alpha = 0.2, shape = 1)+
+  geom_smooth(data = prop_sync_final_newts, aes(x=year, y=synch, col=interval, fill=interval), method=loess, se=TRUE)+
   xlab("Year")+
   ylab("Synchrony (Proportion Significant)")+
   theme_classic()+
-  theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
-        axis.title.x = element_text(color = "black", size = 13, angle = 0, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 13, angle = 90, face = "plain"),
-        legend.title = element_text(color = "black", size = 13,face = "plain"),
-        legend.text = element_text(color = "grey20", size = 12,face = "plain"))+
+  theme(axis.text.x = element_text(color = "grey20", size = 20, angle = 0, hjust = -0.1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 20, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
+        axis.title.x = element_text(color = "black", size = 22, angle = 0, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 22, angle = 90, face = "plain"),
+        legend.title = element_text(color = "black", size = 22,face = "plain"),
+        legend.text = element_text(color = "grey20", size = 20,face = "plain"))+
   scale_color_manual(values = fanmrfox,
                      name = "Timescale Band",
                      labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
@@ -1014,6 +1020,7 @@ ggplot()+
                       labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
                       guide = guide_legend(reverse = TRUE))
 
+ggsave("acrossloess.pdf", width = 40, height = 20, units = "cm")
 
 
 
@@ -1317,9 +1324,10 @@ synchpredict_within_scaled$interval_f <- factor(synchpredict_within_scaled$inter
 
 
 ggplot()+
-  geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
-  geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
+  #geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
+  #geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
   geom_jitter(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  geom_smooth(data = synchpredict_within_scaled, aes(x=year, y=synch, col=interval, fill=interval), method=loess, se=TRUE)+
   xlab("Year")+
   ylab("Synchrony (Proportion Significant)")+
   theme_classic()+
@@ -1340,14 +1348,14 @@ ggplot()+
 ggplot()+
   #geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
   #geom_ribbon(data = synchpredict_within_scaled, aes(x=year, y=predicted,ymin=conf.low, ymax=conf.high, fill = interval), alpha = 0.1)+
-  #geom_jitter(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
-  geom_ribbon(data = proportions_final, aes(x=year, y=synch, fill=interval), stat='smooth', method = "loess", se=TRUE, alpha=0.25) +
-  geom_line(data = proportions_final, aes(x=year, y=synch, col=interval),size = 1.5,stat='smooth', method = "loess")+
-  #geom_smooth(data = proportions_final, aes(x=year, y=synch, col=interval, fill=interval))+
+  geom_jitter(data = proportions_final, aes(x=year, y=synch, col=interval), alpha = 0.1, shape = 1)+
+  #geom_ribbon(data = proportions_final, aes(x=year, y=synch, fill=interval), stat='smooth', method = "loess", se=TRUE, alpha=0.25) +
+  #geom_line(data = proportions_final, aes(x=year, y=synch, col=interval),size = 1.5,stat='smooth', method = "loess")+
+  geom_smooth(data = proportions_final, aes(x=year, y=synch, col=interval, fill=interval))+
   xlab("Year")+
   ylab("Synchronous events (annual proportion)")+
   theme_classic()+
-  theme(axis.text.x = element_text(color = "grey20", size = 2, angle = 0, hjust = -0.1, face = "plain"),
+  theme(axis.text.x = element_text(color = "grey20", size = 20, angle = 0, hjust = -0.1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 20, angle = 0, hjust = -0.1, vjust = 0, face = "plain"),  
         axis.title.x = element_text(color = "black", size = 22, angle = 0, face = "plain"),
         axis.title.y = element_text(color = "black", size = 22, angle = 90, face = "plain"),
@@ -1361,7 +1369,7 @@ ggplot()+
                     name = "Timescale Band",
                     labels = c("Extra-Long (20-30 yr)", "Long (10-20 yr)", "Medium (5-10 yr)", "Short (2-5 yr)"),
                     guide = guide_legend(reverse = TRUE))
-
+ggsave("withinloess.pdf", width = 30, height = 20, units = "cm")
 
 ggplot()+
   geom_line(data = synchpredict_within_scaled, aes(x=year, y=predicted, col = interval), size = 1)+
