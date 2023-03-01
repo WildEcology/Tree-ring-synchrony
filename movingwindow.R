@@ -55,6 +55,15 @@ avg_plot_growth_wide = as.data.frame(avg_plot_growth_wide, stringsAsFactors = FA
 avg_plot_growth_wide = map_df(avg_plot_growth_wide, as.numeric)
 avg_plot_growth_mx <- as.matrix(avg_plot_growth_wide)
 
+# clean data for wpmf
+times <- 1901:2018
+avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, clev = 5)$cdat
+avg_plot_growth_df <- as.data.frame(avg_plot_growth_mx)
+colnames(avg_plot_growth_df) <- 1901:2018
+avg_plot_growth_df <- avg_plot_growth_df %>%
+  pivot_longer(1:118, names_to="year", values_to = "avg_growth_cleaned")
+avg_plot_growth_df$plot <- avg_plot_growth$plot
+
 
 ## TMAX ##
 tmax_00s <- prismdat %>%
@@ -98,6 +107,14 @@ tmax = as.data.frame(tmax, stringsAsFactors = FALSE)
 tmax = map_df(tmax, as.numeric)
 tmax_mx <- as.matrix(tmax)
 
+# clean data for wpmf
+times <- 1901:2018
+tmax_mx <- cleandat(tmax_mx, times, clev = 5)$cdat
+tmax_df <- as.data.frame(tmax_mx)
+colnames(tmax_df) <- 1901:2018
+tmax_df <- tmax_df %>%
+  pivot_longer(1:118, names_to="year", values_to = "avg_tmax_cleaned")
+tmax_df$plot <- avg_plot_tmax_long$plot
 
 ## WATER - YEAR ##
 ppt_month$plot <- as.character(ppt_month$plot)
@@ -131,7 +148,7 @@ water_year_avg <- water_year_filtered %>%
   summarize(total_ppt = sum(value))
   
 water_year_wide <- water_year_avg %>%
-  pivot_wider(names_from = wateryear, values_from = mean_ppt, id_cols = plot2)%>%
+  pivot_wider(names_from = wateryear, values_from = total_ppt, id_cols = plot2)%>%
   select(-c("1900", "2019", "2020"))%>%
   rename(plot = plot2)
 
@@ -148,54 +165,24 @@ wateryear = as.data.frame(wateryear, stringsAsFactors = FALSE)
 wateryear = map_df(wateryear, as.numeric)
 wateryear_mx <- as.matrix(wateryear)
 
-## VPD-MAX ##
-
-vpd_filtered <- ppt_month_plot_update %>%
-  filter(plot2 %in% match_plots_rwi)
-
-vpd_wide <- vpd_filtered%>%
-  filter(type == "vpdmax")%>%
-  group_by(plot2, year)%>%
-  summarize(mean_vpd_max = mean(value))%>%
-  pivot_wider(names_from = year, values_from = mean_vpd_max, id_cols = plot2)%>%
-  select(-c("1900", "2019", "2020"))%>%
-  rename(plot = plot2)
-
-vpd_long <- vpd_wide %>%
-  pivot_longer(2:119, names_to = "year", values_to = "avg_vpd")
-
-# format matrix for analysis
-vpd <- as.matrix(vpd_wide)
-colnames(vpd) <- NULL
-vpd <- vpd[, c(2:119)]
-
-# convert character matrix to numeric
-vpd = as.data.frame(vpd, stringsAsFactors = FALSE)
-vpd = map_df(vpd, as.numeric)
-vpd_mx <- as.matrix(vpd)
-
+# clean data for wpmf
+times <- 1901:2018
+wateryear_mx <- cleandat(wateryear_mx, times, clev = 5)$cdat
+wateryear_df <- as.data.frame(wateryear_mx)
+colnames(wateryear_df) <- 1901:2018
+wateryear_df <- wateryear_df %>%
+  pivot_longer(1:118, names_to="year", values_to = "total_wy_cleaned")
+wateryear_df$plot <- water_year_long$plot
 
 #### TMAX WAVELET ####
-times <- 1901:2018
-tmax_mx <- cleandat(tmax_mx, times, clev = 5)$cdat
 res<-wpmf(tmax_mx,times,sigmethod="quick")
 plotmag(res)
 
 #### WATER-YEAR WAVELET ####
-times <- 1901:2018
-wateryear_mx <- cleandat(wateryear_mx, times, clev = 5)$cdat
 res<-wpmf(wateryear_mx,times,sigmethod="quick")
 plotmag(res)
 
-#### VPD WAVELET ####
-times <- 1901:2018
-vpd_mx <- cleandat(vpd_mx, times, clev = 5)$cdat
-res<-wpmf(vpd_mx,times,sigmethod="quick")
-plotmag(res)
-
 #### ACROSS PLOT WAVELET ####
-times <- 1901:2018
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, clev = 5)$cdat
 res<-wpmf(avg_plot_growth_mx,times,sigmethod="quick")
 plotmag(res)
 
@@ -282,36 +269,6 @@ wateryear_tmax_coherence <- wateryear_tmax_coherence %>%
                          p_val <= 0.05 ~ "sig"))
 
 
-## VPD & RWI ##
-
-times <- 1:118
-res_vpd <- coh(dat1 = vpd_mx, dat2=avg_plot_growth_mx, times=times,norm="powall",
-                sigmethod = "fast", nrand=10000)
-plotmag(res_vpd)
-
-short <- c(2,5)
-medium <- c(5,10)
-long <- c(10,20)
-xlong <- c(20,30)
-
-res_vpd<-bandtest(res_vpd,short)
-res_vpd<-bandtest(res_vpd,medium)
-res_vpd<-bandtest(res_vpd,long)
-res_vpd<-bandtest(res_vpd,xlong)
-vpd_coherence <- get_bandp(res_vpd)
-
-vpd_coherence <- vpd_coherence %>%
-  mutate(phase_test = (mn_phs/pi))%>%
-  mutate(phase = case_when(phase_test <= 0.25 ~ "in",
-                           phase_test >= 0.25 & phase_test <= 0.75 ~ "lag",
-                           phase_test >= 0.75 ~ "anti"))%>%
-  mutate(sig = case_when(p_val >= 0.05 ~ "non",
-                         p_val <= 0.05 ~ "sig"))
-
-
-
-
-
 #### WAVELET LINEAR MODEL ####
 ## RWI & TMAX & WATERYEAR ##
 times <- 1:118
@@ -372,59 +329,15 @@ pres<-predsync(wlm_all)
 plotmag(pres)
 
 
-## RWI & VPD## 
-times <- 1:118
-dat<-list(rwi=avg_plot_growth_mx,vpd=vpd_mx)
-
-# create model
-wlm_all<-wlm(dat,times,resp=1,pred=2,norm="powall")
-wlm_all_drop_vpd<-wlmtest(wlm_all,drop="vpd",sigmethod="fft",nrand=1000)
-
-short <- c(2,5)
-medium <- c(5,10)
-long <- c(10,20)
-xlong <- c(20,30)
-
-wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,short)
-wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,medium)
-wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,long)
-wlm_all_drop_vpd<-bandtest(wlm_all_drop_vpd,xlong)
-
-wlm_vpd <- get_bandp(wlm_all_drop_vpd)%>%
-  mutate(sig = case_when(p_val >= 0.05 ~ "non",
-                         p_val <= 0.05 ~ "sig"))
-
-plotmag(wlm_all_drop_vpd)
-plotrank(wlm_all_drop_vpd)
-
-
-se <- syncexpl(wlm_all)
-se_short <- se[se$timescales>=short[1] & se$timescales<=short[2],]
-se_short_output <- data.frame(round(100*colMeans(se_short[,c(3:9)])/mean(se_short$sync),2))
-
-se_medium <- se[se$timescales>=medium[1] & se$timescales<=medium[2],]
-se_medium_output <- data.frame(round(100*colMeans(se_medium[,c(3:9)])/mean(se_medium$sync),2))
-
-se_long <- se[se$timescales>=long[1] & se$timescales<=long[2],]
-se_long_output <- data.frame(round(100*colMeans(se_long[,c(3:9)])/mean(se_long$sync),2))
-
-se_xlong <- se[se$timescales>=xlong[1] & se$timescales<=xlong[2],]
-se_xlong_output <- data.frame(round(100*colMeans(se_xlong[,c(3:9)])/mean(se_xlong$sync),2))
-
-sync_explained <- cbind(se_short_output, se_medium_output, se_long_output, se_xlong_output)
-names(sync_explained) <- c("short", "medium", "long", "xlong")
-
-pres<-predsync(wlm_all)
-plotmag(pres)
 #### MOVING WINDOW COHERENCE ####
 
 ## RWI & WATER-YEAR ##
-window_length <- 50
+window_length <- 60
 window_delta <- window_length - 1
 avg_plot_growth$year <- as.numeric(avg_plot_growth$year)
 start_year <- min(avg_plot_growth$year)
 end_year <- max(avg_plot_growth$year) - window_delta
-times <- 1:50
+times <- 1:60
 short <- c(2,5)
 medium <- c(5,10)
 long <- c(10,20)
@@ -439,24 +352,24 @@ for(i in start_year:end_year){
   
   # PREPARE DATA FOR COH
   # WATER - YEAR
-  wateryear_window <- water_year_long %>%
+  wateryear_window <- wateryear_df %>%
     filter(year %in% select_years)%>%
-    pivot_wider(names_from = year, values_from = wy_ppt, id_cols = plot)
+    pivot_wider(names_from = year, values_from = total_wy_cleaned, id_cols = plot)
   wateryear_window <- as.matrix(wateryear_window)
   colnames(wateryear_window) <- NULL
-  wateryear_window <- wateryear_window[,2:51]
+  wateryear_window <- wateryear_window[,2:61]
   wateryear_window = as.data.frame(wateryear_window, stringsAsFactors = FALSE)
   wateryear_window = map_df(wateryear_window, as.numeric)
-  wateryear_mx <- as.matrix(wateryear_window)
+  wy_mx <- as.matrix(wateryear_window)
   
 
   # RWI
-  rwi_window<- avg_plot_growth %>%
+  rwi_window<- avg_plot_growth_df %>%
     filter(year %in% select_years)%>%
-    pivot_wider(names_from = "year", values_from = "avg_growth", id_cols=plot)
+    pivot_wider(names_from = "year", values_from = "avg_growth_cleaned", id_cols = plot)
   rwi_window<- as.matrix(rwi_window)
   colnames(rwi_window) <- NULL
-  rwi_window <- rwi_window[, 2:51] 
+  rwi_window <- rwi_window[, 2:61] 
   rwi_window = as.data.frame(rwi_window, stringsAsFactors = FALSE)
   rwi_window = map_df(rwi_window, as.numeric)
   rwi_mx <- as.matrix(rwi_window)
@@ -464,16 +377,16 @@ for(i in start_year:end_year){
   
   
   # COH
-  rwi_mx <- cleandat(rwi_mx, times,5)$cdat
-  wateryear_mx <- cleandat(wateryear_mx, times,5)$cdat
+  rwi_mx <- cleandat(rwi_mx, times,1)$cdat
+  wy_mx <- cleandat(wy_mx, times,1)$cdat
 
-  res_wateryear <- coh(dat1 = wateryear_mx, dat2 = rwi_mx, times=times, norm="powall",
+  res_wateryear <- coh(dat1 = wy_mx, dat2 = rwi_mx, times=times, norm="powall",
                        sigmethod = "fast", nrand=1000)
   
   res_wateryear<-bandtest(res_wateryear,short)
   res_wateryear<-bandtest(res_wateryear,medium)
   res_wateryear<-bandtest(res_wateryear,long)
-  #res_wateryear<-bandtest(res_wateryear,xlong)
+  res_wateryear<-bandtest(res_wateryear,xlong)
   wateryear_coherence <- get_bandp(res_wateryear)
   
   wateryear_coherence <- wateryear_coherence %>%
@@ -493,16 +406,6 @@ for(i in start_year:end_year){
 
 
 ## RWI & TMAX ##
-window_length <- 50
-window_delta <- window_length - 1
-avg_plot_growth$year <- as.numeric(avg_plot_growth$year)
-start_year <- min(avg_plot_growth$year)
-end_year <- max(avg_plot_growth$year) - window_delta
-times <- 1:50
-short <- c(2,5)
-medium <- c(5,10)
-long <- c(10,20)
-xlong <- c(20,30)
 tmax_coh_window <- tibble()
 
 for(i in start_year:end_year){
@@ -514,39 +417,39 @@ for(i in start_year:end_year){
   # PREPARE DATA FOR COH
 
   # TMAX
-  tmax_window <- avg_plot_tmax_long %>%
+  tmax_window <- tmax_df %>%
     filter(year %in% select_years)%>%
-    pivot_wider(names_from = year, values_from = avg_tmax, id_cols = plot)
+    pivot_wider(names_from = year, values_from = avg_tmax_cleaned, id_cols = plot)
   tmax_window <- as.matrix(tmax_window)
   colnames(tmax_window) <- NULL
-  tmax_window <- tmax_window[, c(2:51)] 
+  tmax_window <- tmax_window[, c(2:61)] 
   tmax_window = as.data.frame(tmax_window, stringsAsFactors = FALSE)
   tmax_window = map_df(tmax_window, as.numeric)
-  tmax_mx <- as.matrix(tmax_window)
+  temp_mx <- as.matrix(tmax_window)
   
   # RWI
-  rwi_window<- avg_plot_growth %>%
+  rwi_window<- avg_plot_growth_df %>%
     filter(year %in% select_years)%>%
-    pivot_wider(names_from = "year", values_from = "avg_growth", id_cols=plot)
+    pivot_wider(names_from = "year", values_from = "avg_growth_cleaned", id_cols = plot)
   rwi_window<- as.matrix(rwi_window)
   colnames(rwi_window) <- NULL
-  rwi_window <- rwi_window[, c(2:51)] 
+  rwi_window <- rwi_window[, 2:61] 
   rwi_window = as.data.frame(rwi_window, stringsAsFactors = FALSE)
   rwi_window = map_df(rwi_window, as.numeric)
   rwi_mx <- as.matrix(rwi_window)
   
   
   # COH
-  rwi_mx <- cleandat(rwi_mx, times, 5)$cdat
-  tmax_mx <- cleandat(tmax_mx, times,5)$cdat
+  rwi_mx <- cleandat(rwi_mx, times, 1)$cdat
+  temp_mx <- cleandat(temp_mx, times,1)$cdat
   
-  res_tmax <- coh(dat1 = tmax_mx, dat2 = rwi_mx, times=times, norm="powall",
+  res_tmax <- coh(dat1 = temp_mx, dat2 = rwi_mx, times=times, norm="powall",
                        sigmethod = "fast", nrand=1000)
   
   res_tmax<-bandtest(res_tmax,short)
   res_tmax<-bandtest(res_tmax,medium)
   res_tmax<-bandtest(res_tmax,long)
-  #res_tmax<-bandtest(res_tmax,xlong)
+  res_tmax<-bandtest(res_tmax,xlong)
   tmax_coherence <- get_bandp(res_tmax)
   
   tmax_coherence <- tmax_coherence %>%
@@ -565,11 +468,68 @@ for(i in start_year:end_year){
 }
 
 
+plotmag(res_tmax)
+plotmag(res_wateryear)
+
+tmax_coh_window <-  tmax_coh_window %>%
+  mutate(pvaldiff = 1-p_val)%>%
+  mutate(band = case_when(ts_low_bd == 2 & ts_hi_bd == 5 ~ "short",
+                          ts_low_bd == 5  & ts_hi_bd == 10 ~ "medium",
+                          ts_low_bd == 10 & ts_hi_bd == 20 ~ "long",
+                          ts_low_bd == 20 & ts_hi_bd == 30 ~ "xlong"))
+tmax_coh_window$driver <- "temperature"
+
+
+ggplot()+
+  geom_line(data=tmax_coh_window, aes(x=start_year, y=pvaldiff, col=band))+
+  geom_hline(yintercept = 0.95, linetype="dashed")+
+  theme_bw()+
+  ylab("1-pvalue")+
+  xlab("starting year")+
+  scale_color_brewer(palette = "Dark2", breaks=c("short","medium","long", "xlong"))+
+  #annotate("text", x=1975, y = 0.99, label = "long-term", col = "green" )+
+  ggtitle("tmax coherence significance (30 year windows)")
+
+wy_coh_window <-  wy_coh_window %>%
+  mutate(pvaldiff = 1-p_val)%>%
+  mutate(band = case_when(ts_low_bd == 2 & ts_hi_bd == 5 ~ "short",
+                          ts_low_bd == 5  & ts_hi_bd == 10 ~ "medium",
+                          ts_low_bd == 10 & ts_hi_bd == 20 ~ "long",
+                          ts_low_bd == 20 & ts_hi_bd == 30 ~ "xlong"))
+wy_coh_window$driver <- "precipitation"
+
+
+ggplot()+
+  geom_line(data=wy_coh_window, aes(x=start_year, y=pvaldiff, col=band))+
+  geom_hline(yintercept = 0.95, linetype="dashed")+
+  theme_bw()+
+  ylab("1-pvalue")+
+  xlab("starting year")+
+  scale_color_brewer(palette = "Dark2", breaks=c("short","medium","long", "xlong"))+
+  ggtitle("water-year coherence significance (30 year windows)")
+
+# combined
+
+ggplot()+
+  geom_line(data=wy_coh_window, aes(x = start_year, y = pvaldiff, col = band), linetype = "dashed")+
+  geom_line(data=tmax_coh_window, aes(x = start_year, y = pvaldiff, col = band))+
+  geom_hline(yintercept = 0.95)+
+  theme_bw()+
+  ylab("1-pvalue")+
+  xlab("starting year")+
+  scale_color_brewer(palette = "Dark2", breaks=c("short","medium","long", "xlong"))+
+  scale_y_continuous(limits=c(0.8, 1.10))+
+  ggtitle("Coherence significance (60 year windows)")
+
+
+
+
+
 ## FIND SIG WINDOWS ##
-wy_coh_sig_50 <- wy_coh_window %>%
+wy_coh_sig_60 <- wy_coh_window %>%
   filter(sig == "sig")
 
-tmax_coh_sig_50 <- tmax_coh_window %>%
+tmax_coh_sig_60 <- tmax_coh_window %>%
   filter(sig == "sig")
 
 
@@ -770,7 +730,7 @@ M2events <- M2events %>%
                               ts > 20 & ts <= 30 ~ "ancient"))
 
 
-prop_sync_final <- data.frame(year = NA, synch = NA, asynch = NA, ns = NA, interval = NA)
+prop_sync_final <- data.frame(year = NA, synch = NA, asynch = NA, ns = NA, interval = NA, obs = NA)
 
 for (xx in 1:length(unique(M2events$interval))) {
   
@@ -821,7 +781,8 @@ for (xx in 1:length(unique(M2events$interval))) {
   
   plot1_temp <- prop_sync %>%
     full_join(prop_async, by="year") %>%
-    full_join(prop_ns, by="year")
+    full_join(prop_ns, by="year") %>%
+    full_join(prop_den_s, by="year")
   
   plot1_temp$interval <- current
   
@@ -839,13 +800,13 @@ library("ggeffects")
 
 # redefine timeseries for each band to include only years with at least half the timescales in that band
 
-timescales_b <- data.frame(res$timescales)
+timescales_b <- data.frame(M2events$ts)
 
 timescales_per_band <- timescales_b %>%
-  mutate(band = case_when(res.timescales >= 2 & res.timescales <= 5 ~ "short",
-                          res.timescales > 5 & res.timescales <= 10 ~ "medium",
-                          res.timescales > 10 & res.timescales <= 20 ~ "long",
-                          res.timescales > 20 & res.timescales <= 30 ~ "ancient"))%>%
+  mutate(band = case_when(M2events.ts >= 2 & M2events.ts <= 5 ~ "short",
+                          M2events.ts > 5 & M2events.ts <= 10 ~ "medium",
+                          M2events.ts > 10 & M2events.ts <= 20 ~ "long",
+                          M2events.ts > 20 & M2events.ts <= 30 ~ "ancient"))%>%
   count(band)%>%
   rename(interval = band)%>%
   na.omit()
