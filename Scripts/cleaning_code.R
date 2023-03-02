@@ -9,38 +9,39 @@ library("here")
 library("tibble")
 
 # read in datasets
-prismdat <- read.csv(here("Data/rwi_prismdat.csv")) # RWI & TMAX
-ppt_month <- read.csv(here("Data/prism_plots_1900.csv")) # WATER-YEAR
+prismdat <- read.csv(here("Data/rwi_prismdat.csv")) # RWI 
+env_month <- read.csv(here("Data/prism_plots_1900.csv")) # WATER-YEAR & TMAX
 
 #### PREPARE DATA ####
 
-## RWI ##
-# subset 1900-2018
+## GROWTH DATA ##
+# subset 1900-2018, each row represent's and individual tree's data
 rwi_00s <- prismdat %>%
   filter(year >= 1900)%>%
   drop_na(value)%>%
   rename(site = plot)%>%
-  rename(plot = plot_id_needle)
-# find plots and years with at least 5 trees 
-rwi_5 <- rwi_00s%>%
-  group_by(year, plot)%>%
-  summarise(number = n())%>%
-  filter(number >= 5)
-# subsetting only plots with at least 5 trees
-rwi_00s_unfiltered_long <- left_join(rwi_5, rwi_00s, by = c("year", "plot"))%>%
-  select(year, plot, tree_num, value)
-rwi_00s_unfiltered_wide <- rwi_00s_unfiltered_long %>%
+  rename(plot = plot_id_needle)%>%
+  select(year, plot, value, tree_num) %>%
+  pivot_wider(names_from = year, values_from=value)
+
+# remove any trees with missing data along the time series 
+rwi_00s_tree_filtered<- rwi_00s[rowSums(is.na(rwi_00s))==0,]
+
+# find plots with at least 5 trees 
+rwi_00s_plot_filtered <- rwi_00s_tree_filtered %>%
+  pivot_longer(3:121, names_to = "year", values_to = "value")%>%
+  group_by(plot)%>%
+  mutate(num_trees = round(n()/118))%>%
+  filter(num_trees >= 5)
+
+rwi_00s_plot_filtered_wide <- rwi_00s_plot_filtered %>%
   pivot_wider(names_from = year, values_from = value)
-# removing any trees with missing data along the timeseries
-rwi_00s_filtered_wide<- rwi_00s_unfiltered_wide[rowSums(is.na(rwi_00s_unfiltered_wide))==0,]
-rwi_00s_filtered_long <- rwi_00s_filtered_wide %>%
-  pivot_longer(3:121, names_to = "year", values_to = "rwi")
 
 # avg growth per plot per year
-avg_plot_growth <- rwi_00s_filtered_long %>%
+avg_plot_growth <- rwi_00s_plot_filtered %>%
   filter(year > 1900)%>%
   group_by(plot, year)%>%
-  summarize(avg_growth = mean(rwi))
+  summarize(avg_growth = mean(value))
 
 avg_plot_growth_wide <- avg_plot_growth %>%
   pivot_wider(names_from = "year", values_from = "avg_growth")
@@ -64,40 +65,42 @@ avg_plot_growth_df <- avg_plot_growth_df %>%
   pivot_longer(1:118, names_to="year", values_to = "avg_growth_cleaned")
 avg_plot_growth_df$plot <- avg_plot_growth$plot
 
+res_growth_wpmf<-wpmf(avg_plot_growth_mx,times,sigmethod="none")
+
+
+## ENVIRONMENTAL VARIABLES##
+env_month$plot <- as.character(env_month$plot)
+env_month$type <- as.character(env_month$type)
+env_month$year <- as.numeric(env_month$year)
+env_month$month <- as.numeric(env_month$month)
+env_month$value <- as.numeric(env_month$value)
+
+# fix plot names in data to match rwi data
+env_month_plot_update<- env_month %>%
+  mutate(plot2 = case_when(plot == "RC_NA" ~ "RC",
+                           plot == "K_NA" ~ "K",
+                           plot == "JM_NA" ~ "JM", 
+                           TRUE ~ as.character(plot)))
+match_plots_rwi <- unique(rwi_00s_plot_filtered_wide$plot)
+env_filtered <- env_month_plot_update %>%
+  filter(plot2 %in% match_plots_rwi)
+
 
 ## TMAX ##
-tmax_00s <- prismdat %>%
-  filter(year >= 1900)%>%
-  drop_na(value)%>%
-  rename(site = plot)%>%
-  rename(plot = plot_id_needle)
-# find plots and years with at least 5 trees 
-tmax_5 <- rwi_00s%>%
-  group_by(year, plot)%>%
-  summarise(number = n())%>%
-  filter(number >= 5)
-# subsetting only plots with at least 5 trees
-tmax_00s_unfiltered_long <- left_join(tmax_5, tmax_00s, by = c("year", "plot"))%>%
-  select(year, plot, tree_num, tmax)
-tmax_00s_unfiltered_wide <- tmax_00s_unfiltered_long %>%
-  pivot_wider(names_from = year, values_from = tmax)
-# removing any trees with missing data along the timeseries
-tmax_00s_filtered_wide<- tmax_00s_unfiltered_wide[rowSums(is.na(tmax_00s_unfiltered_wide))==0,]
-tmax_00s_filtered_long <- tmax_00s_filtered_wide %>%
-  pivot_longer(3:121, names_to = "year", values_to = "tmax")
+avg_tmax <- env_filtered%>%
+  filter(type == "tmax")%>%
+  group_by(plot2, year)%>%
+  summarize(avg_tmax = mean(value))
 
-# avg tmax per plot per year
-avg_plot_tmax <- tmax_00s_filtered_long %>%
-  filter(year > 1900)%>%
-  group_by(plot,year)%>%
-  summarise(avg_tmax = mean(tmax))%>%
-  pivot_wider(names_from = "year", values_from = "avg_tmax")
+avg_tmax_wide <- avg_tmax %>%
+  pivot_wider(names_from = year, values_from = avg_tmax, id_cols = plot2)%>%
+  select(-c("1900", "2019", "2020"))%>%
+  rename(plot = plot2)
 
-avg_plot_tmax_long <- avg_plot_tmax %>%
-  pivot_longer(2:119, names_to = "year", values_to = "avg_tmax")
+avg_tmax_long <- avg_tmax_wide %>%
+  pivot_longer(2:119,names_to = "year", values_to = "avg_tmax")
 
-# format matrix for analysis 
-tmax <- as.matrix(avg_plot_tmax)
+tmax <- as.matrix(avg_tmax_wide)
 colnames(tmax) <- NULL
 tmax <- tmax[, c(2:119)] # timeseries 1901-2018
 
@@ -108,46 +111,31 @@ tmax = map_df(tmax, as.numeric)
 tmax_mx <- as.matrix(tmax)
 
 # clean data for wpmf
-times <- 1901:2018
 tmax_mx <- cleandat(tmax_mx, times, clev = 5)$cdat
 tmax_df <- as.data.frame(tmax_mx)
 colnames(tmax_df) <- 1901:2018
 tmax_df <- tmax_df %>%
   pivot_longer(1:118, names_to="year", values_to = "avg_tmax_cleaned")
-tmax_df$plot <- avg_plot_tmax_long$plot
+tmax_df$plot <- avg_tmax_long$plot
 
-## WATER - YEAR ##
-ppt_month$plot <- as.character(ppt_month$plot)
-ppt_month$type <- as.character(ppt_month$type)
-ppt_month$year <- as.numeric(ppt_month$year)
-ppt_month$month <- as.numeric(ppt_month$month)
-ppt_month$value <- as.numeric(ppt_month$value)
+res_tmax_wpmf<-wpmf(tmax_mx,times,sigmethod="none")
+
+## WATER YEAR ##
 # make wateryear column
-ppt_month <- ppt_month %>%
+ppt_month <- env_filtered %>%
   mutate(wateryear = case_when(month == "10" ~ year+1,
                                month == "11" ~ year+1,
                                month == "12" ~ year+1,
                                TRUE ~ as.numeric(year)))
 
-# fix plot names in data to match rwi data
-ppt_month_plot_update<- ppt_month %>%
-  mutate(plot2 = case_when(plot == "RC_NA" ~ "RC",
-                           plot == "K_NA" ~ "K",
-                           plot == "JM_NA" ~ "JM", 
-                           TRUE ~ as.character(plot)))
-# prepare water year data
-match_plots_rwi <- unique(rwi_00s_filtered_wide$plot)
 
-water_year_filtered <- ppt_month_plot_update %>%
-  filter(plot2 %in% match_plots_rwi)
-
-water_year_avg <- water_year_filtered %>%
+water_year_total <- ppt_month %>%
   filter(month == c(1, 2, 3, 4, 5, 10, 11, 12))%>%
   filter(type == "ppt")%>%
   group_by(plot2, wateryear)%>%
   summarize(total_ppt = sum(value))
 
-water_year_wide <- water_year_avg %>%
+water_year_wide <- water_year_total %>%
   pivot_wider(names_from = wateryear, values_from = total_ppt, id_cols = plot2)%>%
   select(-c("1900", "2019", "2020"))%>%
   rename(plot = plot2)
@@ -166,7 +154,6 @@ wateryear = map_df(wateryear, as.numeric)
 wateryear_mx <- as.matrix(wateryear)
 
 # clean data for wpmf
-times <- 1901:2018
 wateryear_mx <- cleandat(wateryear_mx, times, clev = 5)$cdat
 wateryear_df <- as.data.frame(wateryear_mx)
 colnames(wateryear_df) <- 1901:2018
@@ -174,8 +161,11 @@ wateryear_df <- wateryear_df %>%
   pivot_longer(1:118, names_to="year", values_to = "total_wy_cleaned")
 wateryear_df$plot <- water_year_long$plot
 
+res_precip_wpmf<-wpmf(wateryear_mx,times,sigmethod="none")
+
+
 #### FUNCTIONS ####
-n <- length(unique(rwi_00s_filtered_long$plot))
+n <- length(match_plots_rwi)
 psync.by.chance <- function(n, nreps=10000, prob=c(0.025, 0.975)){
   
   #generates sets of random phasors
