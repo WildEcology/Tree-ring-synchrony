@@ -119,6 +119,45 @@ graphics::contour(x=times,y=log2(timescales),z=wav,levels=upper,drawlabels=F,lwd
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=lower,drawlabels=F,lwd=2,
                   xaxs="i",xaxt="n",xaxp=c(0,1,5),las=1,frame=F,lty=1,col="white", add=TRUE)
 
+timescales_b <- data.frame(unique(M2events$ts))
+
+timescales_per_band <- timescales_b %>%
+  mutate(band = case_when(unique.M2events.ts. >= 2 & unique.M2events.ts. <= 5 ~ "short",
+                          unique.M2events.ts. > 5 & unique.M2events.ts. <= 10 ~ "medium",
+                          unique.M2events.ts. > 10 & unique.M2events.ts. <= 20 ~ "long",
+                          unique.M2events.ts. > 20 & unique.M2events.ts. <= 30 ~ "xlong"))%>%
+  count(band)%>%
+  rename(interval = band)%>%
+  na.omit()
+
+num_timescales_per_year_per_band <- M2events %>% 
+  group_by(year, interval)%>%
+  summarise(num_ts = n())
+
+num_timescales_per_year_per_band <- full_join(num_timescales_per_year_per_band,timescales_per_band)
+
+new_timeseries <- num_timescales_per_year_per_band %>%
+  mutate(keep_year = case_when(num_ts >= n/2 ~ "Y",
+                               num_ts < n/2 ~ "N"))%>%
+  filter(keep_year == "Y")%>%
+  group_by(interval)%>%
+  mutate(starting.year = min(year)) %>%
+  mutate(ending.year = max(year))
+
+final_timeseries <- new_timeseries %>%
+  select(interval, starting.year, ending.year)%>%
+  group_by(interval)%>%
+  distinct(starting.year, .keep_all = TRUE)
+
+
+
+prop_sync_final <- inner_join(prop_sync_final, final_timeseries)
+
+prop_sync_final <- prop_sync_final %>%
+  filter(year >= starting.year & year <= ending.year)%>%
+  select(year, synch, obs, interval)
+
+prop_sync_final <- na.omit(prop_sync_final)
 
 #### MODEL FIT ####
 library(glmmTMB)
@@ -129,21 +168,33 @@ prop_sync_final$interval <- as.factor(prop_sync_final$interval)
 prop_sync_final$scaled_year <- scale(prop_sync_final$year)
 prop_sync_final$x <- as.numeric(round(prop_sync_final$scaled_year,2))
 
-
+# all bands
+null_model <- glmmTMB(synch~1, 
+                       data = prop_sync_final,
+                       family=binomial(),
+                       weights = obs)
 
 linear_model <-
-  glmmTMB(synch~ scaled_year*interval, 
+  glmmTMB(synch ~ scaled_year* interval, 
           data= prop_sync_final,
           family = binomial(),
           weights = obs)
 
 quad_model <-
-  glmmTMB(synch~ poly(scaled_year, 2, raw=TRUE)* interval, 
+  glmmTMB(synch ~ poly(scaled_year, 2, raw = TRUE) * interval, 
           data= prop_sync_final,
           family = binomial(),
           weights = obs)
 
-AIC(linear_model, quad_model)
+AIC(null_model, linear_model, quad_model)
+
+vis_prod <- ggemmeans(quad_model,
+                      terms= c("scaled_year[all]", "interval"),
+                      type="fe",
+                      ci.lvl = 0.95)
+
+# break up by band
+# short term 
 prop_sync_short <- prop_sync_final %>%
   filter(interval == "short")
 snull_model <- glmmTMB(synch~1, 
@@ -152,18 +203,20 @@ snull_model <- glmmTMB(synch~1,
                       weights = obs)
 
 slinear_model <-
-  glmmTMB(synch ~ year, 
+  glmmTMB(synch ~ scaled_year, 
           data= prop_sync_short,
           family = binomial(),
           weights = obs)
 
 squad_model <-
-  glmmTMB(synch~ poly(year, 2, raw=TRUE), 
+  glmmTMB(synch~ poly(scaled_year, 2, raw=TRUE), 
           data= prop_sync_short,
           family = binomial(),
           weights = obs)
 
 AIC(snull_model, slinear_model, squad_model)
+# linear fit best
+
 
 prop_sync_med <- prop_sync_final%>%
   filter(interval == "medium")
@@ -174,19 +227,19 @@ mnull_model <- glmmTMB(synch~1,
                       weights = obs)
 
 mlinear_model <-
-  glmmTMB(synch ~ year, 
+  glmmTMB(synch ~ scaled_year, 
           data= prop_sync_med,
           family = binomial(),
           weights = obs)
 
 mquad_model <-
-  glmmTMB(synch~ poly(year, 2, raw=TRUE), 
+  glmmTMB(synch~ poly(scaled_year, 2, raw=TRUE), 
           data= prop_sync_med,
           family = binomial(),
           weights = obs)
 
 AIC(mnull_model, mlinear_model, mquad_model)
-
+# quad fit best
 
 prop_sync_long <- prop_sync_final%>%
   filter(interval == "long")
@@ -197,90 +250,87 @@ lnull_model <- glmmTMB(synch~1,
                       weights = obs)
 
 llinear_model <-
-  glmmTMB(synch ~ year, 
+  glmmTMB(synch ~ scaled_year, 
           data= prop_sync_long,
           family = binomial(),
           weights = obs)
 
 lquad_model <-
-  glmmTMB(synch~ poly(year, 2, raw=TRUE), 
+  glmmTMB(synch~ poly(scaled_year, 2, raw=TRUE), 
           data= prop_sync_long,
           family = binomial(),
           weights = obs)
 
 AIC(lnull_model, llinear_model, lquad_model)
-
+# quad fit best
 
 prop_sync_xlong <- prop_sync_final%>%
-  filter(interval == "xlong")%>%
-  mutate(new_synch = case_when(synch <= 0  ~ synch+0.0000001,
-                               TRUE ~ synch))
+  filter(interval == "xlong")
 
-xnull_model <- glmmTMB(new_synch~1, 
+xnull_model <- glmmTMB(synch~1, 
                       data = prop_sync_xlong,
                       family=binomial(),
                       weights = obs)
 
 xlinear_model <-
-  glmmTMB(new_synch ~ year, 
+  glmmTMB(synch ~ scaled_year, 
           data= prop_sync_xlong,
           family = binomial(),
           weights = obs)
 
 xquad_model <-
-  glmmTMB(new_synch~ poly(year, 2, raw=TRUE), 
+  glmmTMB(synch~ poly(scaled_year, 2, raw=TRUE), 
           data= prop_sync_xlong,
           family = binomial(),
           weights = obs)
 
 AIC(xnull_model, xlinear_model, xquad_model)
+#linear fits best
 
-
-# All together three lines:
-
+# All together:
 svis_prod <- ggemmeans(slinear_model, 
-                      terms = c("year[all]"), 
-                      type = "fe", 
-                      ci.lvl = .95)
+                       terms = c("scaled_year[all]"), 
+                       type = "fe", 
+                       ci.lvl = .95)
+svis_prod$band <- "short"
 mvis_prod <- ggemmeans(mquad_model, 
-                       terms = c("year[all]"), 
+                       terms = c("scaled_year[all]"), 
                        type = "fe", 
                        ci.lvl = .95)
+mvis_prod$band <- "medium"
 lvis_prod <- ggemmeans(lquad_model, 
-                       terms = c("year[all]"), 
+                       terms = c("scaled_year[all]"), 
                        type = "fe", 
                        ci.lvl = .95)
-vis_prod <- ggemmeans(quad_model, 
-                       terms = c("year[all]"), 
+lvis_prod$band <- "long"
+xvis_prod <- ggemmeans(xlinear_model, 
+                       terms = c("scaled_year[all]"), 
                        type = "fe", 
                        ci.lvl = .95)
+xvis_prod$band <- "xlong"
 
 
 
-vis_prod <- ggemmeans(quad_model, 
-                      terms = c("scaled_year [all]", "interval"), 
-                      type = "fixed", 
-                      ci.lvl = .95)
-
-
-plot(vis_prod)
 
 prop_sync_final_tojoin <- prop_sync_final %>% 
   select(year,x) %>%
   unique()
 
-final_prop_data <- left_join(prop_sync_final_tojoin, vis_prod, by="x")
+final_prop_data <- rbind(svis_prod, mvis_prod, lvis_prod, xvis_prod)
+
+
+final_prop_data <- left_join(prop_sync_final_tojoin, final_prop_data, by="x")
 
 ggplot() +
   geom_point(data = prop_sync_final, aes(x=year, y=synch, col= interval), alpha = 0.2) +
-  geom_line(data = final_prop_data, aes(x = year, y = predicted, group = group, color = group),
+  geom_line(data = final_prop_data, aes(x = year, y = predicted, group = band, color = band),
             # color = colortreatpred,
             linewidth = 1) +
   geom_ribbon(data = final_prop_data, aes(
     x = year,
     y = predicted,
-    group=group,
-    fill = group,
+    group=band,
+    fill = band,
     ymin = conf.low,
     ymax = conf.high),
     alpha = 0.2,
