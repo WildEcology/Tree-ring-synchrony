@@ -4,6 +4,28 @@
 source(here::here("scripts/cleaning_code.R"))
 
 
+
+
+{sites <- unique(rwi_00s_filtered_wide$plot)
+  times <- 1900:2018
+  pdf(file="./Figures/wpmf.pdf",width=11,height=11,onefile=T)
+  for (s in 1:length(sites)){
+    temp <- rwi_00s_filtered_wide[which(rwi_00s_filtered_wide$plot == sites[s]),]
+    temp <- temp[,-c(1,2)]
+    temp <- as.matrix(temp)
+    names(temp) <- NULL
+    
+    temp_clean <- cleandat(temp, times, 1)
+    temp_res <- wpmf(temp_clean$cdat,times,sigmethod="quick")
+    
+    #png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=1000,height=768)
+    plotmag(temp_res)
+    #dev.off()
+  }
+  dev.off()
+}
+
+
 # calculate signficance thresholds 
 temp_xx <- psync.by.chance(n)
 upper<- temp_xx[2]

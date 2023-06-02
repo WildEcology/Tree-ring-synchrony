@@ -146,7 +146,7 @@ for (s in 1:length(sites)){
   names(temp) <- NULL
 
   temp_clean <- cleandat(temp, times, 1)
-  temp_res <- wpmf(temp_clean$cdat,times,sigmethod="quick")
+  temp_res <- wmf(temp_clean$cdat,times)
 
   #png(filename=paste0("./wavelet_tree_",sites[s],".png"),width=1000,height=768)
   plotmag(temp_res)
