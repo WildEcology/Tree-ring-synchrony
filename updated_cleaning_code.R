@@ -137,3 +137,88 @@ winter_ppt_df$plot <- winter_ppt$plot
 res_ppt_wpmf<-wpmf(winter_ppt_mx,times,sigmethod="none")
 res_ppt_wmf<-wmf(winter_ppt_mx,times)
 
+## Minimum summer temperatures ##
+# remove annual measurements from the dataset
+# match up plots with growth data
+tmin_dat <- na.omit(tmin_dat)
+tmin_dat <- tmin_dat %>%
+  filter(plot %in% plots)
+
+# filter for summer months (June - Aug)
+months <- c(6, 7, 8)
+summer_tmin <- tmin_dat %>%
+  filter(month %in% months )
+
+# calculate avg tmin in summer months
+summer_tmin <- summer_tmin %>%
+  group_by(plot, year)%>%
+  summarise(summer_tmin = mean(tmin))%>%
+  filter(year >= 1900)%>%
+  filter(year <= 2018)
+
+summer_tmin_wide <- summer_tmin %>%
+  pivot_wider(names_from = "year", values_from = "summer_tmin")
+
+# format matrix for wavelet analysis
+summer_tmin_wide <- as.matrix(summer_tmin_wide)
+colnames(summer_tmin_wide) <- NULL
+summer_tmin_wide <- summer_tmin_wide[, c(2:120)] # time series 1900 -2018
+
+# convert character matrix to numeric
+summer_tmin_wide = as.data.frame(summer_tmin_wide, stringsAsFactors = FALSE)
+summer_tmin_wide = map_df(summer_tmin_wide, as.numeric)
+summer_tmin_mx <- as.matrix(summer_tmin_wide)
+
+# clean data for wpmf
+times <- 1900:2018
+summer_tmin_mx <- cleandat(summer_tmin_mx, times, clev = 5)$cdat
+summer_tmin_df <- as.data.frame(summer_tmin_mx)
+colnames(summer_tmin_df) <- 1900:2018
+summer_tmin_df <- summer_tmin_df %>%
+  pivot_longer(1:119, names_to="year", values_to = "summer_tmin_cleaned")
+summer_tmin_df$plot <- summer_tmin$plot
+
+# produce wpmf for growth data
+res_tmin_wpmf<-wpmf(summer_tmin_mx,times,sigmethod="none")
+res_tmin_wmf<-wmf(summer_tmin_mx,times)
+
+## VPD max ##
+# remove annual measurements from the dataset
+# match up plots with growth data
+vpdmax_dat <- na.omit(vpdmax_dat)
+vpdmax_dat <- vpdmax_dat %>%
+  filter(plot %in% plots)
+
+# calculate avg annual 'max' vpd
+avg_vpdmax <- vpdmax_dat %>%
+  group_by(plot, year)%>%
+  summarise(avg_vpdmax = mean(vpdmax))%>%
+  filter(year >= 1900)%>%
+  filter(year <= 2018)
+
+avg_vpdmax_wide <- avg_vpdmax %>%
+  pivot_wider(names_from = "year", values_from = "avg_vpdmax")
+
+# format matrix for wavelet analysis
+avg_vpdmax_wide <- as.matrix(avg_vpdmax_wide)
+colnames(avg_vpdmax_wide) <- NULL
+avg_vpdmax_wide <- avg_vpdmax_wide[, c(2:120)] # time series 1900 -2018
+
+# convert character matrix to numeric
+avg_vpdmax_wide = as.data.frame(avg_vpdmax_wide, stringsAsFactors = FALSE)
+avg_vpdmax_wide = map_df(avg_vpdmax_wide, as.numeric)
+avg_vpdmax_mx <- as.matrix(avg_vpdmax_wide)
+
+# clean data for wpmf
+times <- 1900:2018
+avg_vpdmax_mx <- cleandat(avg_vpdmax_mx, times, clev = 5)$cdat
+avg_vpdmax_df <- as.data.frame(avg_vpdmax_mx)
+colnames(avg_vpdmax_df) <- 1900:2018
+avg_vpdmax_df <- avg_vpdmax_df %>%
+  pivot_longer(1:119, names_to="year", values_to = "avg_vpdmax_cleaned")
+avg_vpdmax_df$plot <- avg_vpdmax$plot
+
+# produce wpmf for growth data
+res_vpdmax_wpmf<-wpmf(avg_vpdmax_mx,times,sigmethod="none")
+res_vpdmax_wmf<-wmf(avg_vpdmax_mx,times)
+
