@@ -188,16 +188,21 @@ res_tmin_wmf<-wmf(summer_tmin_mx,times)
 vpdmax_dat <- na.omit(vpdmax_dat)
 vpdmax_dat <- vpdmax_dat %>%
   filter(plot %in% plots)
-
+# create water-year variable 
+vpdmax_dat <- vpdmax_dat %>%
+  mutate(wateryear = case_when(month == "10" ~ year+1,
+                               month == "11" ~ year+1,
+                               month == "12" ~ year+1,
+                               TRUE ~ as.numeric(year)))
 # calculate avg annual 'max' vpd
 avg_vpdmax <- vpdmax_dat %>%
-  group_by(plot, year)%>%
+  group_by(plot, wateryear)%>%
   summarise(avg_vpdmax = mean(vpdmax))%>%
-  filter(year >= 1900)%>%
-  filter(year <= 2018)
+  filter(wateryear >= 1900)%>%
+  filter(wateryear <= 2018)
 
 avg_vpdmax_wide <- avg_vpdmax %>%
-  pivot_wider(names_from = "year", values_from = "avg_vpdmax")
+  pivot_wider(names_from = "wateryear", values_from = "avg_vpdmax")
 
 # format matrix for wavelet analysis
 avg_vpdmax_wide <- as.matrix(avg_vpdmax_wide)
