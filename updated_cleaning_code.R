@@ -227,3 +227,268 @@ avg_vpdmax_df$plot <- avg_vpdmax$plot
 res_vpdmax_wpmf<-wpmf(avg_vpdmax_mx,times,sigmethod="none")
 res_vpdmax_wmf<-wmf(avg_vpdmax_mx,times)
 
+#### TWO TIME PERIODS ##########################################################
+# split and clean all data into two time periods 
+
+##1917 - 1967 time series ##
+## RWI ##
+# format matrix for wavelet analysis
+early_growth <- avg_plot_growth_wide[, c(18:68)]
+early_growth_raw <- avg_plot_growth_wide[, c(18:68)]
+# pivot longer for plotting purposes
+colnames(early_growth_raw) <- 1917:1967
+early_growth_long <- early_growth_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_growth")
+early_growth_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+early_growth_long$plot <- early_growth_plots$plot
+early_growth_long$year <- as.character(early_growth_long$year)
+# convert character matrix to numeric
+early_growth = as.data.frame(early_growth, stringsAsFactors = FALSE)
+early_growth = map_df(early_growth, as.numeric)
+early_growth_mx <- as.matrix(early_growth)
+
+# clean data for wpmf
+times <- 1917:1967
+early_growth_mx <- cleandat(early_growth_mx, times, clev = 5)$cdat
+early_growth_df <- as.data.frame(early_growth_mx)
+colnames(early_growth_df) <- 1917:1967
+early_growth_df <- early_growth_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_growth_cleaned") 
+early_growth_df$plot <- early_growth_plots$plot
+
+# produce wpmf & wmf for growth data
+res_early_growth_wpmf<-wpmf(early_growth_mx,times,sigmethod="none")
+res_early_growth_wmf<-wmf(early_growth_mx,times)
+
+## PPT ##
+# format matrix for wavelet analysis
+early_ppt <- winter_ppt_wide[, c(18:68)] 
+early_ppt_raw <- winter_ppt_wide[, c(18:68)] 
+# pivot longer for plotting purposes
+colnames(early_ppt_raw) <- 1917:1967
+early_ppt_long <- early_ppt_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "winter_ppt")
+early_ppt_long$plot <- early_growth_plots$plot
+early_ppt_long$year <- as.character(early_ppt_long$year)
+# convert character matrix to numeric
+early_ppt = as.data.frame(early_ppt, stringsAsFactors = FALSE)
+early_ppt = map_df(early_ppt, as.numeric)
+early_ppt_mx <- as.matrix(early_ppt)
+
+# clean data for wpmf
+times <- 1917:1967
+early_ppt_mx <- cleandat(early_ppt_mx, times, clev = 5)$cdat
+early_ppt_df <- as.data.frame(early_ppt_mx)
+colnames(early_ppt_df) <- 1917:1967
+early_ppt_df <- early_ppt_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "winter_ppt_cleaned")
+early_ppt_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+early_ppt_df$plot <- early_ppt_plots$plot
+
+# produce wpmf & wmf for ppt data
+res_early_ppt_wpmf<-wpmf(early_ppt_mx,times,sigmethod="none")
+res_early_ppt_wmf<-wmf(early_ppt_mx,times)
+
+## TMIN ##
+# format matrix for wavelet analysis
+early_tmin <- summer_tmin_wide[, c(18:68)] 
+early_tmin_raw <- summer_tmin_wide[, c(18:68)] 
+# pivot longer for plotting purposes
+colnames(early_tmin_raw) <- 1917:1967
+early_tmin_long <- early_tmin_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "summer_tmin")
+early_tmin_long$plot <- early_growth_plots$plot
+early_tmin_long$year <- as.character(early_tmin_long$year)
+# convert character matrix to numeric
+early_tmin = as.data.frame(early_tmin, stringsAsFactors = FALSE)
+early_tmin = map_df(early_tmin, as.numeric)
+early_tmin_mx <- as.matrix(early_tmin)
+
+# clean data for wpmf
+times <- 1917:1967
+early_tmin_mx <- cleandat(early_tmin_mx, times, clev = 5)$cdat
+early_tmin_df <- as.data.frame(early_tmin_mx)
+colnames(early_tmin_df) <- 1917:1967
+early_tmin_df <- early_tmin_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "summer_tmin_cleaned")
+early_tmin_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+early_tmin_df$plot <- early_tmin_plots$plot
+
+# produce wpmf & wmf for growth data
+res_early_tmin_wpmf<-wpmf(early_tmin_mx,times,sigmethod="none")
+res_early_tmin_wmf<-wmf(early_tmin_mx,times)
+
+## vpdmax ##
+# format matrix for wavelet analysis
+early_vpdmax <- avg_vpdmax_wide[, c(18:68)] 
+early_vpdmax_raw <- avg_vpdmax_wide[, c(18:68)] 
+# pivot longer for plotting purposes
+colnames(early_vpdmax_raw) <- 1917:1967
+early_vpdmax_long <- early_vpdmax_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_vpdmax")
+early_vpdmax_long$plot <- early_growth_plots$plot
+early_vpdmax_long$year <- as.character(early_vpdmax_long$year)
+# convert character matrix to numeric
+early_vpdmax = as.data.frame(early_vpdmax, stringsAsFactors = FALSE)
+early_vpdmax = map_df(early_vpdmax, as.numeric)
+early_vpdmax_mx <- as.matrix(early_vpdmax)
+
+# clean data for wpmf
+times <- 1917:1967
+early_vpdmax_mx <- cleandat(early_vpdmax_mx, times, clev = 5)$cdat
+early_vpdmax_df <- as.data.frame(early_vpdmax_mx)
+colnames(early_vpdmax_df) <- 1917:1967
+early_vpdmax_df <- early_vpdmax_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_vpdmax_cleaned")
+early_vpdmax_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+early_vpdmax_df$plot <- early_vpdmax_plots$plot
+
+# produce wpmf & wmf for growth data
+res_early_vpdmax_wpmf<-wpmf(early_vpdmax_mx,times,sigmethod="none")
+res_early_vpdmax_wmf<-wmf(early_vpdmax_mx,times)
+
+## 1968 - 2018 time series ##
+## RWI ##
+# format matrix for wavelet analysis
+late_growth <- avg_plot_growth_wide[, c(69:119)] 
+late_growth_raw <- avg_plot_growth_wide[, c(69:119)]
+# pivot longer for plotting purposes
+colnames(late_growth_raw) <- 1968:2018
+late_growth_long <- late_growth_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_growth")
+late_growth_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+late_growth_long$plot <- late_growth_plots$plot
+late_growth_long$year <- as.character(late_growth_long$year)
+# convert character matrix to numeric
+late_growth = as.data.frame(late_growth, stringsAsFactors = FALSE)
+late_growth = map_df(late_growth, as.numeric)
+late_growth_mx <- as.matrix(late_growth)
+
+# clean data for wpmf
+times <- 1968:2018
+late_growth_mx <- cleandat(late_growth_mx, times, clev = 5)$cdat
+late_growth_df <- as.data.frame(late_growth_mx)
+colnames(late_growth_df) <- 1968:2018
+late_growth_df <- late_growth_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_growth_cleaned")
+late_growth_plots <- avg_plot_growth %>%
+  filter(year >= 1968) %>%
+  filter(year <= 2018)
+late_growth_df$plot <- late_growth_plots$plot
+
+# produce wpmf & wmf for growth data
+res_late_growth_wpmf<-wpmf(late_growth_mx,times,sigmethod="none")
+res_late_growth_wmf<-wmf(late_growth_mx,times)
+
+## PPT ##
+# format matrix for wavelet analysis
+late_ppt <- winter_ppt_wide[, c(69:119)] 
+late_ppt_raw <- winter_ppt_wide[, c(69:119)]
+# pivot longer for plotting purposes
+colnames(late_ppt_raw) <- 1968:2018
+late_ppt_long <- late_ppt_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "winter_ppt")
+late_ppt_plots <- avg_plot_growth %>%
+  filter(year >= 1968) %>%
+  filter(year <= 2018)
+late_ppt_long$plot <- late_growth_plots$plot
+late_ppt_long$year <- as.character(late_ppt_long$year)
+# convert character matrix to numeric
+late_ppt = as.data.frame(late_ppt, stringsAsFactors = FALSE)
+late_ppt = map_df(late_ppt, as.numeric)
+late_ppt_mx <- as.matrix(late_ppt)
+
+# clean data for wpmf
+times <- 1968:2018
+late_ppt_mx <- cleandat(late_ppt_mx, times, clev = 5)$cdat
+late_ppt_df <- as.data.frame(late_ppt_mx)
+colnames(late_ppt_df) <- 1968:2018
+late_ppt_df <- late_ppt_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "winter_ppt_cleaned")
+late_ppt_plots <- avg_plot_growth %>%
+  filter(year >= 1968) %>%
+  filter(year <= 2018)
+late_ppt_df$plot <- late_ppt_plots$plot
+
+# produce wpmf & wmf for growth data
+res_late_ppt_wpmf<-wpmf(late_ppt_mx,times,sigmethod="none")
+res_late_ppt_wmf<-wmf(late_ppt_mx,times)
+
+## TMIN ##
+# format matrix for wavelet analysis
+late_tmin <- summer_tmin_wide[, c(69:119)] 
+late_tmin_raw <- summer_tmin_wide[, c(69:119)]
+# pivot longer for plotting purposes
+colnames(late_tmin_raw) <- 1968:2018
+late_tmin_long <- late_tmin_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "summer_tmin")
+late_tmin_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+late_tmin_long$plot <- late_tmin_plots$plot
+late_tmin_long$year <- as.character(late_tmin_long$year)
+# convert character matrix to numeric
+late_tmin = as.data.frame(late_tmin, stringsAsFactors = FALSE)
+late_tmin = map_df(late_tmin, as.numeric)
+late_tmin_mx <- as.matrix(late_tmin)
+
+# clean data for wpmf
+times <- 1968:2018
+late_tmin_mx <- cleandat(late_tmin_mx, times, clev = 5)$cdat
+late_tmin_df <- as.data.frame(late_tmin_mx)
+colnames(late_tmin_df) <- 1968:2018
+late_tmin_df <- late_tmin_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "summer_tmin_cleaned")
+late_tmin_plots <- avg_plot_growth %>%
+  filter(year >= 1968) %>%
+  filter(year <= 2018)
+late_tmin_df$plot <- late_tmin_plots$plot
+
+# produce wpmf & wmf for growth data
+res_late_tmin_wpmf<-wpmf(late_tmin_mx,times,sigmethod="none")
+res_late_tmin_wmf<-wmf(late_tmin_mx,times)
+
+## vpdmax ##
+# format matrix for wavelet analysis
+late_vpdmax <- avg_vpdmax_wide[, c(69:119)] 
+late_vpdmax_raw <- avg_vpdmax_wide[, c(69:119)]
+# pivot longer for plotting purposes
+colnames(late_vpdmax_raw) <- 1968:2018
+late_vpdmax_long <- late_vpdmax_raw %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_vpdmax")
+late_vpdmax_plots <- avg_plot_growth %>%
+  filter(year >= 1917) %>%
+  filter(year <= 1967)
+late_vpdmax_long$plot <- late_vpdmax_plots$plot
+late_vpdmax_long$year <- as.character(late_vpdmax_long$year)
+# convert character matrix to numeric
+late_vpdmax = as.data.frame(late_vpdmax, stringsAsFactors = FALSE)
+late_vpdmax = map_df(late_vpdmax, as.numeric)
+late_vpdmax_mx <- as.matrix(late_vpdmax)
+
+# clean data for wpmf
+times <- 1968:2018
+late_vpdmax_mx <- cleandat(late_vpdmax_mx, times, clev = 5)$cdat
+late_vpdmax_df <- as.data.frame(late_vpdmax_mx)
+colnames(late_vpdmax_df) <- 1968:2018
+late_vpdmax_df <- late_vpdmax_df %>%
+  pivot_longer(1:51, names_to="year", values_to = "avg_vpdmax_cleaned")
+late_vpdmax_plots <- avg_plot_growth %>%
+  filter(year >= 1968) %>%
+  filter(year <= 2018)
+late_vpdmax_df$plot <- late_vpdmax_plots$plot
+
+# produce wpmf & wmf for growth data
+res_late_vpdmax_wpmf<-wpmf(late_vpdmax_mx,times,sigmethod="none")
+res_late_vpdmax_wmf<-wmf(late_vpdmax_mx,times)
+

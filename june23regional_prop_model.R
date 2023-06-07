@@ -1,6 +1,8 @@
 # run updated_cleaning_code script to pull in cleaned data
 source(here::here("updated_cleaning_code.R"))
 
+
+#### REGIONAL ##################################################################
 # calculate signficance thresholds 
 temp_xx <- psync.by.chance(n)
 upper<- temp_xx[2]
@@ -319,6 +321,9 @@ final_prop_data <- rbind(avis_prod, ivis_prod, dvis_prod, mvis_prod)
 final_prop_data <- left_join(prop_sync_final_tojoin, final_prop_data, by="x")
 final_prop_data$year <- as.character(final_prop_data$year)
 prop_sync_final$year <- as.character(prop_sync_final$year)
+prop_sync_final$interval <- factor(prop_sync_final$interval , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+final_prop_data$band <- factor(final_prop_data$band , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+
 ggplot() +
   geom_point(data = prop_sync_final, aes(x=year, y=synch, col= interval), alpha = 0.2) +
   geom_line(data = final_prop_data, aes(x = year, y = predicted, group = band, color = band),
@@ -348,3 +353,146 @@ ggplot() +
   ylab("synchrony (proportion significant)")+
   xlab("year")
 
+#### LOCAL #####################################################################
+tree_per_plot <- rwi_00s_plot_filtered %>%
+  select(plot, num_trees)
+  tree_per_plot <-unique(tree_per_plot[,c("plot", "num_trees")])
+n <- tree_per_plot$num_trees
+temp_xx <- psync.by.chance(n)
+plots <- unique(tree_per_plot$plot)
+thresholds<- matrix(NA, ncol=3, nrow=length(plots))
+colnames(thresholds)<- c("plot","lower","upper")
+
+
+proportions_final <- data.frame()
+
+for(s in 1:length(plots)){
+  current.plot<-plots[s]
+  temp<-tree_per_plot %>% 
+    filter(plot %in% current.plot) %>% 
+    select(-plot)
+  n<-temp$num_trees[1]
+  nreps <- 10000
+  temp<-psync.by.chance(n=n, nreps=nreps, prob=c(0.005, 0.995))
+  thresholds[s,1] <- current.plot
+  thresholds[s,2:3] <- temp
+  
+  rwi_00s_plot <- rwi_00s_plot_filtered_wide %>%
+    filter(plot == current.plot)
+  
+  # format matrix for analysis
+  colnames(rwi_00s_plot) <- NULL
+  rwi_00s_plot <- rwi_00s_plot[, 4:120] 
+  
+  # convert character matrix to numeric
+  rwi_00s_plot = as.data.frame(rwi_00s_plot, stringsAsFactors = FALSE)
+  rwi_00s_plot = map_df(rwi_00s_plot, as.numeric)
+  rwi_00s_plot_mx <- as.matrix(rwi_00s_plot)
+  
+  # calculate wavelet
+  year <- 1900:2018
+  rwi_00s_plot_mx <- cleandat(rwi_00s_plot_mx, year, clev=5)
+  res<-wpmf(rwi_00s_plot_mx$cdat,year,sigmethod="quick")
+  
+  #extract raw values
+  M1 <- as.data.frame(res$values)
+  colnames(M1) <- res$timescales
+  #fix the imaginary #s
+  M1 <- abs(M1)
+  # define thresholds
+  sync <- temp[2]
+  sync <- as.numeric(sync)
+  async <- temp[1]
+  async <- as.numeric(async)
+  
+  M2 <- M1[,1:67]
+  M2$year <- year
+  # classify sync, async and ns
+  M2<- M2 %>%
+    pivot_longer(1:67, names_to = "ts", values_to = "values")
+  M2 <- na.omit(M2)
+  M2events <- M2 %>%
+    mutate(event = case_when(values >= sync ~ "synchronous",
+                             values <= async ~ "asynchronous",
+                             TRUE ~ "NS"))
+  
+  # classify timescale intervals
+  M2events$ts <- as.numeric(M2events$ts)
+  M2events$ts <- as.numeric(M2events$ts)
+  M2events <- M2events %>%
+    mutate(interval = case_when(ts >= 2 & ts <= 3 ~ "annual",
+                                ts > 3 & ts <= 10 ~ "interannual",
+                                ts > 10 & ts <= 20 ~ "decadal",
+                                ts > 20 & ts <= 30 ~ "multidecadal"))
+  
+  # make dataframe to save results
+  plot_current_results <- data.frame()
+  
+  
+  for (xx in 1:length(unique(M2events$interval))) {
+    
+    current <- unique(M2events$interval)[xx]
+    M2events_s <- M2events %>%
+      filter(interval == current)
+    
+    #significantly synchronous in the short term
+    SSs <- M2events_s %>%
+      filter(event == "synchronous")%>%
+      group_by(year)%>%
+      summarise(short_sync = n())
+    
+    #significantly asynchronous in the short term
+    SAs <- M2events_s %>%
+      filter(event == "asynchronous")%>%
+      group_by(year)%>%
+      summarise(short_async = n())
+    
+    #not significant in the short term
+    NSs <- M2events_s %>%
+      filter(event == "NS")%>%
+      group_by(year)%>%
+      summarise(short_NS = n())
+    
+    #the number of observations per year to divide by to get the proportion
+    prop_den_s <- M2events_s %>%
+      group_by(year)%>%
+      summarise(obs = n())
+    
+    # proportion synchronous
+    prop_calc_Ss <- left_join(prop_den_s, SSs)
+    prop_sync <- prop_calc_Ss %>%
+      group_by(year)%>%
+      summarise(synch = short_sync/obs)
+    
+    # proportion asynchronous
+    prop_calc_As <- left_join(prop_den_s, SAs)
+    prop_async <- prop_calc_As %>%
+      group_by(year)%>%
+      summarise(asynch = short_async/obs) 
+    
+    # proportion not significant
+    prop_calc_Ns <- left_join(prop_den_s, NSs)
+    prop_ns <- prop_calc_Ns %>%
+      group_by(year)%>%
+      summarise(ns = short_NS/obs)
+    
+    plot1_temp <- prop_sync %>%
+      full_join(prop_async, by="year") %>%
+      full_join(prop_ns, by="year")
+    
+    plot1_temp$interval <- current
+    plot1_temp$location <- current.plot
+    
+    ### RBIND FOR ROWS
+    plot_current_results <- rbind(plot_current_results, plot1_temp)
+    
+  }
+  
+  proportions_final <- rbind(proportions_final, plot_current_results)
+  
+}
+
+proportions_final[is.na(proportions_final)] <- 0
+
+proportions_final <- proportions_final %>%
+  rename(plot = "location")
