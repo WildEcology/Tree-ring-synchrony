@@ -2,7 +2,7 @@
 source(here::here("updated_cleaning_code.R"))
 
 #### Full Time Series ##########################################################
-# calculate coherence of each predictor across whole timeseries
+# calculate coherence of each predictor across whole time series
 x = avg_plot_growth_mx
 y1 = winter_ppt_mx
 y2 = summer_tmin_mx
@@ -18,7 +18,7 @@ res_timeseries_vpdmax <- coh(dat1 = x, dat2 = y3, times = times, norm = "powall"
                           sigmethod = "fast", nrand = 1000, f0 = 0.5, 
                           scale.max.input = 50)
 
-# bandtest each variable for significant coherence at different timescale bands
+# band test each variable for significant coherence at different timescale bands
 annual <- c(2,3)
 interannual <- c(3,10)
 decadal <- c(10,20)
@@ -73,21 +73,22 @@ vpdmax_coherence <- vpdmax_coherence %>%
                          p_val <= 0.05 ~ "sig"))
 
 
-# calculate synchrony explained by each variable across the entire timeseries for each band
-# and for ppt only 
+# calculate synchrony explained by each variable across the entire time series for each band
 # input all three predictors into a wavelet linear model
 env_all<- list(avg_plot_growth_mx, winter_ppt_mx, summer_tmin_mx, avg_vpdmax_mx)
-env_ppt <- list(avg_plot_growth_mx, winter_ppt_mx)
 wlm_all<-wlm(dat = env_all,times = times, resp=1,pred=2:4,norm="powall",scale.max.input=50)
-wlm_ppt<-wlm(dat = env_ppt,times = times, resp=1,pred=2,norm="powall",scale.max.input=50)
 se_all <- syncexpl(wlm_all)
+
+# calculate synchrony explained by ppt only across the entire time series for each band
+# input ppt into a wavelet linear model
+env_ppt <- list(avg_plot_growth_mx, winter_ppt_mx)
+wlm_ppt<-wlm(dat = env_ppt,times = times, resp=1,pred=2,norm="powall",scale.max.input=50)
 se_ppt <- syncexpl(wlm_ppt)
 
 # ANNUAL 2-3 yr timescales
 se_all_annual<-se_all[se_all$timescales>=annual[1] & se_all$timescales<=annual[2],] 
 se_all_annual <- as.data.frame(round(100*colMeans(se_all_annual[,c(3:12)])/mean(se_all_annual$sync),4))
 names(se_all_annual) <- NULL
-
 
 se_ppt_annual<-se_ppt[se_ppt$timescales>=annual[1] & se_ppt$timescales<=annual[2],] 
 se_ppt_annual <- as.data.frame(round(100*colMeans(se_ppt_annual[,c(3:6)])/mean(se_ppt_annual$sync),4))
@@ -101,6 +102,7 @@ names(se_all_interannual) <- NULL
 se_ppt_interannual<-se_ppt[se_ppt$timescales>=interannual[1] & se_ppt$timescales<=interannual[2],] 
 se_ppt_interannual <- as.data.frame(round(100*colMeans(se_ppt_interannual[,c(3:6)])/mean(se_ppt_interannual$sync),4))
 names(se_ppt_interannual) <- NULL
+
 # DECADAL 10-20 yr timescales
 se_all_decadal<-se_all[se_all$timescales>=decadal[1] & se_all$timescales<=decadal[2],] 
 se_all_decadal <- as.data.frame(round(100*colMeans(se_all_decadal[,c(3:12)])/mean(se_all_decadal$sync),4))
@@ -109,6 +111,7 @@ names(se_all_decadal) <- NULL
 se_ppt_decadal<-se_ppt[se_ppt$timescales>=decadal[1] & se_ppt$timescales<=decadal[2],] 
 se_ppt_decadal <- as.data.frame(round(100*colMeans(se_ppt_decadal[,c(3:6)])/mean(se_ppt_decadal$sync),4))
 names(se_ppt_decadal) <- NULL
+
 # MULTIDECADAL 20-30 yr timecales
 se_all_multidecadal<-se_all[se$timescales>=multidecadal[1] & se_all$timescales<=multidecadal[2],] 
 se_all_multidecadal <- as.data.frame(round(100*colMeans(se_all_multidecadal[,c(3:12)])/mean(se_all_multidecadal$sync),4))
@@ -117,25 +120,18 @@ names(se_all_multidecadal) <- NULL
 se_ppt_multidecadal<-se_ppt[se$timescales>=multidecadal[1] & se_ppt$timescales<=multidecadal[2],] 
 se_ppt_multidecadal <- as.data.frame(round(100*colMeans(se_ppt_multidecadal[,c(3:6)])/mean(se_ppt_multidecadal$sync),4))
 names(se_ppt_multidecadal) <- NULL
+
 # create dataframe for full timeseries coh/sync explained results
 timeseries_all_coh <- cbind(se_all_annual, se_all_interannual, se_all_decadal, se_all_multidecadal)
-
 timeseries_ppt_coh <- cbind(se_ppt_annual, se_ppt_interannual, se_ppt_decadal, se_ppt_multidecadal)
 
 #### Two Time Periods ################################################
-
-# repeat coherence tests with two time periods
+# repeat coherence tests for the two time periods
 x_e = early_growth_mx
 y1_e = early_ppt_mx
 y2_e = early_tmin_mx
 y3_e = early_vpdmax_mx
 times_e = as.numeric(1917:1967)
-
-x_l = late_growth_mx
-y1_l = late_ppt_mx
-y2_l = late_tmin_mx
-y3_l = late_vpdmax_mx
-times_l = as.numeric(1968:2018)
 
 res_early_ppt <- coh(dat1 = x_e, dat2 = y1_e, times = times_e, norm = "powall",
                           sigmethod = "fast", nrand = 1000, f0 = 0.5, 
@@ -146,6 +142,12 @@ res_early_tmin <- coh(dat1 = x_e, dat2 = y2_e, times = times_e, norm = "powall",
 res_early_vpdmax <- coh(dat1 = x_e, dat2 = y3_e, times = times_e, norm = "powall",
                              sigmethod = "fast", nrand = 1000, f0 = 0.5, 
                              scale.max.input = 25)
+
+x_l = late_growth_mx
+y1_l = late_ppt_mx
+y2_l = late_tmin_mx
+y3_l = late_vpdmax_mx
+times_l = as.numeric(1968:2018)
 
 res_late_ppt <- coh(dat1 = x_l, dat2 = y1_l, times = times_l, norm = "powall",
                      sigmethod = "fast", nrand = 1000, f0 = 0.5, 
@@ -257,21 +259,21 @@ late_vpdmax_coherence <- late_vpdmax_coherence %>%
                          p_val <= 0.05 ~ "sig"))
 
 
-# calculate synchrony explained by each variable across the entire timeseries for each band
-# & for ppt only 
+# calculate synchrony explained by each variable across the two timeperiods for each band
 # input all three predictors into a wavelet linear model
-# & input only ppt into a wavelet linear model 
 early_env_all<- list(early_growth_mx, early_ppt_mx, early_tmin_mx, early_vpdmax_mx)
-early_env_ppt <- list(early_growth_mx, early_ppt_mx)
 late_env_all<- list(late_growth_mx, late_ppt_mx, late_tmin_mx, late_vpdmax_mx)
-late_env_ppt <- list(late_growth_mx, late_ppt_mx)
 early_wlm_all<-wlm(dat = early_env_all,times = times_e, resp=1,pred=2:4,norm="powall",scale.max.input=20)
-early_wlm_ppt<-wlm(dat = early_env_ppt,times = times_e, resp=1,pred=2,norm="powall",scale.max.input=20)
 late_wlm_all<-wlm(dat = late_env_all,times = times_l, resp=1,pred=2:4,norm="powall",scale.max.input=20)
-late_wlm_ppt<-wlm(dat = late_env_ppt,times = times_l, resp=1,pred=2,norm="powall",scale.max.input=20)
 early_se_all <- syncexpl(early_wlm_all)
-early_se_ppt <- syncexpl(early_wlm_ppt)
 late_se_all <- syncexpl(late_wlm_all)
+
+# calculate synchrony explained for ppt only across the two timeperiods for each band
+early_env_ppt <- list(early_growth_mx, early_ppt_mx)
+late_env_ppt <- list(late_growth_mx, late_ppt_mx)
+early_wlm_ppt<-wlm(dat = early_env_ppt,times = times_e, resp=1,pred=2,norm="powall",scale.max.input=20)
+late_wlm_ppt<-wlm(dat = late_env_ppt,times = times_l, resp=1,pred=2,norm="powall",scale.max.input=20)
+early_se_ppt <- syncexpl(early_wlm_ppt)
 late_se_ppt <- syncexpl(late_wlm_ppt)
 
 # ANNUAL 2-3 yr timescales
@@ -349,8 +351,8 @@ y2 = summer_tmin_mx
 y3 = avg_vpdmax_mx
 times = 1900:2018
 
-# calculate time varying coherence for each variable across whole timeseries
-
+# calculate time varying coherence for each variable across whole time series
+# leave f0 and scale_max_input blank
 tv_timeseries_ppt <- coh_tv(dat1 = x, dat2 = y1, times = times, norm = "powall",
                           sigmethod = "fftsurrog1", nrand = 1000)
 tv_timeseries_tmin <- coh_tv(dat1 = x, dat2 = y2, times = times, norm = "powall",
