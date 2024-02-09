@@ -66,8 +66,12 @@ avg_plot_growth_df <- avg_plot_growth_df %>%
   pivot_longer(1:118, names_to="year", values_to = "avg_growth_cleaned")
 avg_plot_growth_df$plot <- avg_plot_growth$plot
 
-res_growth_wpmf<-wpmf(avg_plot_growth_mx,times,sigmethod="none")
+res_growth_wpmf<-wpmf(avg_plot_growth_mx,times,sigmethod="quick")
+res_growth_wmf <- wmf(avg_plot_growth_mx,times)
 
+regional_wavelet <- print(res_growth_wmf)
+
+plotmag(res_growth_wmf)
 
 ## ENVIRONMENTAL VARIABLES##
 env_month$plot <- as.character(env_month$plot)

@@ -174,24 +174,27 @@ regional_avg <- ggplot() +
     alpha = 0.2,
     show.legend = F) +
   theme_bw()+
-  scale_x_discrete(breaks = seq(1900,2018,5))+
-  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 90, hjust = .5, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
-        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
         legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("average synchrony")+
-  xlab("year")
+  ylab("Average synchrony")+
+  xlab("Year")
 
 
 
 avg_sync_standardband <- na.omit(avg_sync_standardband)
 avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
+avg_sync_standardband$interval <- factor(avg_sync_standardband$interval, levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+final_avg_data$band <- factor(final_avg_data$band, levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+
 ggplot() +
   geom_line(data = avg_sync_standardband, aes(x = year, y = z_scores, group = interval, color = interval)) +
   theme_bw()+
@@ -208,6 +211,161 @@ ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average Synchrony")+
   xlab("Year")
+
+shortbands <- c("annual", "interannual")
+short <- avg_sync_standardband %>%
+  filter(interval %in% shortbands)
+short_av <- final_avg_data %>%
+  filter(band %in% shortbands)
+longbands <- c("decadal", "multidecadal")
+long <- avg_sync_standardband %>%
+  filter(interval %in% longbands)
+long_av <- final_avg_data %>%
+  filter(band %in% longbands)
+
+mycols1 <- colors()[c(91, 128, 148, 99)]
+mypal1 <- palette(mycols1)
+names(mypal1) = c("annual", "interannual", "decadal", "multidecadal")
+colScale1 <- scale_colour_manual(name = "interval", values = mypal1)
+colScale2 <- scale_fill_manual(name = "interval", values = mypal1)
+colScale2 <- scale_fill_manual(name = "band", values = mypal1)
+regional_avg <- ggplot() +
+  #geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, color = band),
+            # color = colortreatpred,
+            linewidth = 1) +
+  geom_ribbon(data = final_avg_data, aes(
+    x = year,
+    y = predicted,
+    group=band,
+    fill = band,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = F) +
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  #scale_colour_manual(name = "band", values = mypal1)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 12,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average synchrony")+
+  ylim(0,1)+
+  xlab("Year")+
+  colScale1+
+  colScale2
+
+ggsave(file="/Users/kaitlynmcknight/Documents/J/regional_avg.svg", plot=regional_avg, width=6, height=5)
+
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/avg4.png", width = 5, height = 5, units = 'in', res = 600)
+regional_avg
+dev.off()
+regional_avg_short <- ggplot() +
+  geom_point(data = short, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  geom_line(data = short_av, aes(x = year, y = predicted, group = band, color = band),
+            # color = colortreatpred,
+            linewidth = 1) +
+  geom_ribbon(data = short_av, aes(
+    x = year,
+    y = predicted,
+    group=band,
+    fill = band,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = F) +
+  theme_bw()+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  #scale_color_brewer(palette = "Dark2")+
+  #scale_fill_brewer(palette = "Dark2")+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average synchrony")+
+  ylim(0,1)+
+  xlab("Year")+
+  colScale1+
+  colScale2
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/avgshort.png", width = 5, height = 5, units = 'in', res = 600)
+regional_avg_short
+dev.off()
+
+regional_avg_long <- ggplot() +
+  geom_point(data = long, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  geom_line(data = long_av, aes(x = year, y = predicted, group = band, color = band),
+            # color = colortreatpred,
+            linewidth = 1) +
+  geom_ribbon(data = long_av, aes(
+    x = year,
+    y = predicted,
+    group=band,
+    fill = band,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = F) +
+  theme_bw()+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average synchrony")+
+  ylim(0,1)+
+  xlab("Year")+
+  colScale1+
+  colScale2
+
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/navglong.png", width = 5, height = 5, units = 'in', res = 600)
+regional_avg_long
+dev.off()
+
+
+avg_sync_standardband <- na.omit(avg_sync_standardband)
+avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
+shortbands <- c("annual", "interannual")
+short <- avg_sync_standardband %>%
+  filter(interval %in% shortbands)
+longbands <- c("decadal", "multidecadal")
+long <- avg_sync_standardband %>%
+  filter(interval %in% longbands)
+ggplot() +
+  geom_line(data = avg_sync_standardband, aes(x = year, y = z_scores, group = interval, color = interval)) +
+  theme_bw()+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 90, hjust = .5, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Synchrony")+
+  xlab("Year")
+
 
 avg_sync_standard <- avg_sync %>%
   ungroup()%>%

@@ -320,8 +320,20 @@ final_prop_data <- rbind(avis_prod, ivis_prod, dvis_prod, mvis_prod)
 final_prop_data <- left_join(prop_sync_final_tojoin, final_prop_data, by="x")
 final_prop_data$year <- as.character(final_prop_data$year)
 prop_sync_final$year <- as.character(prop_sync_final$year)
+
+prop_sync_final$interval <- factor(prop_sync_final$interval, levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+final_prop_data$band <- factor(final_prop_data$band, levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+
+
+mycols1 <- colors()[c(91, 128, 148, 99)]
+mypal1 <- palette(mycols1)
+names(mypal1) = c("annual", "interannual", "decadal", "multidecadal")
+colScale1 <- scale_colour_manual(name = "interval", values = mypal1)
+colScale2 <- scale_fill_manual(name = "interval", values = mypal1)
+colScale2 <- scale_fill_manual(name = "band", values = mypal1)
+
 regional_prop <- ggplot() +
-  geom_point(data = prop_sync_final, aes(x=year, y=synch, col= interval), alpha = 0.2) +
+  #geom_point(data = prop_sync_final, aes(x=year, y=synch, col= interval), alpha = 0.2) +
   geom_line(data = final_prop_data, aes(x = year, y = predicted, group = band, color = band),
             # color = colortreatpred,
             linewidth = 1) +
@@ -335,19 +347,114 @@ regional_prop <- ggplot() +
     alpha = 0.2,
     show.legend = F) +
   theme_bw()+
-  scale_x_discrete(breaks = seq(1900,2018,5))+
-  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 90, hjust = .5, face = "plain"),
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
         axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
-        legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
+        legend.text = element_text(color = "grey20", size = 12,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("synchrony (proportion significant)")+
-  xlab("year")
+  ylab("Synchrony (proportion significant)")+
+  xlab("year")+
+  colScale1+
+  colScale2
+
+
+ggsave(file="/Users/kaitlynmcknight/Documents/J/regional_prop.svg", plot=regional_prop, width=6, height=5)
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/prop4.png", width = 5, height = 5, units = 'in', res = 600)
+regional_prop
+dev.off()
+
+shortbands <- c("annual", "interannual")
+short <- prop_sync_final %>%
+  filter(interval %in% shortbands)
+short_prop <- final_prop_data %>%
+  filter(band %in% shortbands)
+longbands <- c("decadal", "multidecadal")
+long <- prop_sync_final %>%
+  filter(interval %in% longbands)
+long_prop <- final_prop_data %>%
+  filter(band %in% longbands)
+
+regional_prop_short <- ggplot() +
+  geom_point(data = short, aes(x=year, y=synch, col= interval), alpha = 0.1) +
+  geom_line(data = short_prop, aes(x = year, y = predicted, group = band, color = band),
+            # color = colortreatpred,
+            linewidth = 1) +
+  geom_ribbon(data = short_prop, aes(
+    x = year,
+    y = predicted,
+    group=band,
+    fill = band,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = F) +
+  theme_bw()+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  #scale_color_brewer(palette = "Dark2")+
+  #scale_fill_brewer(palette = "Dark2")+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Synchrony (proportion significant)")+
+  ylim(0,1)+
+  xlab("Year")+
+  colScale1+
+  colScale2
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/propshort.png", width = 5, height = 5, units = 'in', res = 600)
+regional_prop_short
+dev.off()
+
+regional_prop_long <- ggplot() +
+  geom_point(data = long, aes(x=year, y=synch, col= interval), alpha = 0.1) +
+  geom_line(data = long_prop, aes(x = year, y = predicted, group = band, color = band),
+            # color = colortreatpred,
+            linewidth = 1) +
+  geom_ribbon(data = long_prop, aes(
+    x = year,
+    y = predicted,
+    group=band,
+    fill = band,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = F) +
+  theme_bw()+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Synchrony (proportion significant)")+
+  ylim(0,1)+
+  xlab("Year")+
+  colScale1+
+  colScale2
+
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/proplong.png", width = 5, height = 5, units = 'in', res = 600)
+regional_prop_long
+dev.off()
+
+
+
 
 
 #### LOCAL #####

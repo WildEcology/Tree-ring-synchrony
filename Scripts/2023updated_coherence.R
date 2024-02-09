@@ -7,6 +7,7 @@ x = avg_plot_growth_mx
 y1 = winter_ppt_mx
 y2 = summer_tmin_mx
 y3 = avg_vpdmax_mx
+times = 1900:2018
 
 res_timeseries_ppt <- coh(dat1 = x, dat2 = y1, times = times, norm = "powall",
                           sigmethod = "fast", nrand = 1000, f0 = 0.5, 
@@ -21,7 +22,7 @@ res_timeseries_vpdmax <- coh(dat1 = x, dat2 = y3, times = times, norm = "powall"
 # band test each variable for significant coherence at different timescale bands
 annual <- c(2,3)
 interannual <- c(3,10)
-decadal <- c(10,20)
+decadal <- c(8,12)
 multidecadal <- c(20,30)
 
 # PPT
@@ -417,25 +418,28 @@ avg.coh.vpdmax <- coh.vpdmax %>%
 avg.coh.vpdmax <- na.omit(avg.coh.vpdmax)  
 
 # combine into one data frame for plotting purposes
-avg.coh.ppt$driver <- "winter_ppt"
-avg.coh.tmin$driver <- "summer_tmin"
-avg.coh.vpdmax$driver <- "avg_vpdmax"
+avg.coh.ppt$driver <- "Winter PRECIP"
+avg.coh.tmin$driver <- "Summer TEMP"
+avg.coh.vpdmax$driver <- "Average VPD"
 avg.tv.coh <- rbind(avg.coh.ppt, avg.coh.tmin, avg.coh.vpdmax)
 avg.tv.coh$times <- as.character(avg.tv.coh$times)
 avg.tv.coh$band <- factor(avg.tv.coh$band , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
 
 # plot avg coherence across time per band for each driver
+
+
+
 ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = band, color = band)) +
   facet_wrap(~ driver)+
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 90, hjust = .5, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
-        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 90, hjust = .5, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
-        legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
@@ -443,24 +447,38 @@ ggplot() +
   ylab("Average Coherence")+
   xlab("Year")
 
-ggplot() +
+
+
+avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('Winter PRECIP', 'Summer TEMP', 'Average VPD'))
+
+mycols1 <- colors()[c(91, 128, 99)]
+mypal1 <- palette(mycols1)
+names(mypal1) = c("Summer TEMP", "Winter PRECIP", "Average VPD")
+colScale1 <- scale_colour_manual(name = "driver", values = mypal1)
+
+
+driver_band <- ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
   facet_wrap(~ band)+
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 90, hjust = .5, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
-        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
-        legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
   ylab("Average Coherence")+
-  xlab("Year")
+  xlab("Year")+
+  colScale1
 
+png("/Users/kaitlynmcknight/Documents/esapresgraphics/envdriver.png", width = 8, height = 6, units = 'in', res = 600)
+driver_band
+dev.off()
 
 
 
