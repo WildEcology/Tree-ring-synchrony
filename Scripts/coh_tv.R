@@ -245,3 +245,4 @@ coh_tv<-function(dat1,dat2,times,norm,sigmethod="none",nrand=1000,scale.min=2,sc
   class(result)<-c("coh_tv","list")
   return(result)    
 }
+

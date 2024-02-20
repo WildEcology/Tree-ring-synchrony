@@ -29,6 +29,9 @@ png("/Users/kaitlynmcknight/Documents/esapresgraphics/newrawrwi.png", width = 5,
 raw_rwi
 dev.off()
 
+
+hist(avg_plot_growth$avg_growth)
+
 ## ppt ##
 winter_ppt$wateryear <- as.character(winter_ppt$wateryear)
 raw_ppt <- ggplot()+
@@ -49,7 +52,7 @@ raw_ppt <- ggplot()+
   xlab("Year")+
   ylab("OCT - MAY, mm")
 
-png("/Users/kaitlynmcknight/Documents/esapresgraphics/newrawppt.png", width = 5, height = 5, units = 'in', res = 600)
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/newrawppt.png", width = 5, height = 5, units = 'in', res = 600)
 raw_ppt
 dev.off()
 ## tmin ##
@@ -71,9 +74,10 @@ raw_tmin <- ggplot()+
         panel.grid.major.x=element_blank()) +
   xlab("Year")+
   ylab("JUN - AUG, C")
-png("/Users/kaitlynmcknight/Documents/esapresgraphics/newrawtmin.png", width = 5, height = 5, units = 'in', res = 600)
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/newrawtmin.png", width = 5, height = 5, units = 'in', res = 600)
 raw_tmin
 dev.off()
+
 ## vpdmax ##
 avg_vpdmax$wateryear <- as.character(avg_vpdmax$wateryear)
 raw_vpd <- ggplot()+
@@ -94,7 +98,7 @@ raw_vpd <- ggplot()+
   xlab("Year")+
   ylab("OCT-SEPT, hPa")
 
-png("/Users/kaitlynmcknight/Documents/esapresgraphics/newrawvpd.png", width = 5, height = 5, units = 'in', res = 600)
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/newrawvpd.png", width = 5, height = 5, units = 'in', res = 600)
 raw_vpd
 dev.off()
 #### Two Time Periods ##########################################################

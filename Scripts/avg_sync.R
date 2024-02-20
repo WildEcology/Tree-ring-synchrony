@@ -262,11 +262,10 @@ regional_avg <- ggplot() +
   colScale1+
   colScale2
 
-ggsave(file="/Users/kaitlynmcknight/Documents/J/regional_avg.svg", plot=regional_avg, width=6, height=5)
-
-png("/Users/kaitlynmcknight/Documents/esapresgraphics/avg4.png", width = 5, height = 5, units = 'in', res = 600)
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/avg_sync.png", width = 5, height = 5, units = 'in', res = 600)
 regional_avg
 dev.off()
+
 regional_avg_short <- ggplot() +
   geom_point(data = short, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
   geom_line(data = short_av, aes(x = year, y = predicted, group = band, color = band),

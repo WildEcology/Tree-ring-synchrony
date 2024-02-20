@@ -475,8 +475,7 @@ driver_band <- ggplot() +
   ylab("Average Coherence")+
   xlab("Year")+
   colScale1
-
-png("/Users/kaitlynmcknight/Documents/esapresgraphics/envdriver.png", width = 8, height = 6, units = 'in', res = 600)
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/env_coh.png", width = 5, height = 5, units = 'in', res = 600)
 driver_band
 dev.off()
 

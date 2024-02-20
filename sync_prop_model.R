@@ -1,6 +1,7 @@
 # run updated_cleaning_code script to pull in cleaned data
 source(here::here("updated_cleaning_code.R"))
 
+
 #### REGIONAL ####
 # calculate signficance thresholds 
 temp_xx <- psync.by.chance(n)
@@ -364,8 +365,7 @@ regional_prop <- ggplot() +
   colScale2
 
 
-ggsave(file="/Users/kaitlynmcknight/Documents/J/regional_prop.svg", plot=regional_prop, width=6, height=5)
-png("/Users/kaitlynmcknight/Documents/esapresgraphics/prop4.png", width = 5, height = 5, units = 'in', res = 600)
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/prop_sync.png", width = 5, height = 5, units = 'in', res = 600)
 regional_prop
 dev.off()
 

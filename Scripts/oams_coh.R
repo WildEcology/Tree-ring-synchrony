@@ -228,7 +228,7 @@ avg.tv.coh$times <- as.character(avg.tv.coh$times)
 avg.tv.coh$band <- factor(avg.tv.coh$band , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
 
 # plot avg coherence across time per band for each driver
-ggplot() +
+oams_coh <- ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = band, color = band)) +
   facet_wrap(~ driver)+
   theme_bw()+
@@ -245,6 +245,10 @@ ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average Coherence")+
   xlab("Year")
+
+png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/oams_coh.png", width = 5, height = 5, units = 'in', res = 600)
+oams_coh
+dev.off()
 
 ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
