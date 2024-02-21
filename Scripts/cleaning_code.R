@@ -59,7 +59,7 @@ avg_plot_growth_mx <- as.matrix(avg_plot_growth_wide)
 
 # clean data for wpmf
 times <- 1901:2018
-avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, clev = 5)$cdat
+avg_plot_growth_mx <- cleandat(avg_plot_growth_mx, times, clev = 1)$cdat
 avg_plot_growth_df <- as.data.frame(avg_plot_growth_mx)
 colnames(avg_plot_growth_df) <- 1901:2018
 avg_plot_growth_df <- avg_plot_growth_df %>%
@@ -116,7 +116,7 @@ tmax = map_df(tmax, as.numeric)
 tmax_mx <- as.matrix(tmax)
 
 # clean data for wpmf
-tmax_mx <- cleandat(tmax_mx, times, clev = 5)$cdat
+tmax_mx <- cleandat(tmax_mx, times, clev = 1)$cdat
 tmax_df <- as.data.frame(tmax_mx)
 colnames(tmax_df) <- 1901:2018
 tmax_df <- tmax_df %>%
@@ -159,7 +159,7 @@ wateryear = map_df(wateryear, as.numeric)
 wateryear_mx <- as.matrix(wateryear)
 
 # clean data for wpmf
-wateryear_mx <- cleandat(wateryear_mx, times, clev = 5)$cdat
+wateryear_mx <- cleandat(wateryear_mx, times, clev = 1)$cdat
 wateryear_df <- as.data.frame(wateryear_mx)
 colnames(wateryear_df) <- 1901:2018
 wateryear_df <- wateryear_df %>%

@@ -1,5 +1,6 @@
 # run updated_cleaning_code script to pull in cleaned data
 source(here::here("updated_cleaning_code.R"))
+source(here::here("Scripts/coh_tv.R"))
 
 #### Full Time Series ##########################################################
 # calculate coherence of each predictor across whole time series
