@@ -23,7 +23,7 @@ res_timeseries_vpdmax <- coh(dat1 = x, dat2 = y3, times = times, norm = "powall"
 # band test each variable for significant coherence at different timescale bands
 annual <- c(2,3)
 interannual <- c(3,10)
-decadal <- c(8,12)
+decadal <- c(10,20)
 multidecadal <- c(20,30)
 
 # PPT
@@ -42,6 +42,15 @@ ppt_coherence <- ppt_coherence %>%
   mutate(sig = case_when(p_val >= 0.05 ~ "non",
                          p_val <= 0.05 ~ "sig"))
 
+res_timeseries_ppt<-bandtest(res_timeseries_ppt,annual)
+res_timeseries_ppt<-bandtest(res_timeseries_ppt,interannual)
+res_timeseries_ppt<-bandtest(res_timeseries_ppt,decadal)
+res_timeseries_ppt<-bandtest(res_timeseries_ppt,multidecadal)
+get_bandp(res_timeseries_ppt)
+plotmag(res_timeseries_ppt)
+plotphase(res_timeseries_ppt)
+
+
 # TMIN
 res_bt_tmin_a<-bandtest(res_timeseries_tmin,annual)
 res_bt_tmin_ia<-bandtest(res_timeseries_tmin,interannual)
@@ -57,6 +66,15 @@ tmin_coherence <- tmin_coherence %>%
                            phase_test >= 0.75 ~ "anti"))%>%
   mutate(sig = case_when(p_val >= 0.05 ~ "non",
                          p_val <= 0.05 ~ "sig"))
+
+res_timeseries_tmin<-bandtest(res_timeseries_tmin,annual)
+res_timeseries_tmin<-bandtest(res_timeseries_tmin,interannual)
+res_timeseries_tmin<-bandtest(res_timeseries_tmin,decadal)
+res_timeseries_tmin<-bandtest(res_timeseries_tmin,multidecadal)
+get_bandp(res_timeseries_tmin)
+plotmag(res_timeseries_tmin)
+plotphase(res_timeseries_tmin)
+
 
 # VPD
 res_bt_vpdmax_a<-bandtest(res_timeseries_vpdmax,annual)
