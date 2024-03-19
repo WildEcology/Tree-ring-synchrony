@@ -16,9 +16,9 @@ res_timeseries_ppt <- coh(dat1 = x, dat2 = y1, times = times, norm = "powall",
 res_timeseries_tmin <- coh(dat1 = x, dat2 = y2, times = times, norm = "powall",
                           sigmethod = "fast", nrand = 1000, f0 = 0.5, 
                           scale.max.input = 50)
-res_timeseries_vpdmax <- coh(dat1 = x, dat2 = y3, times = times, norm = "powall",
-                          sigmethod = "fast", nrand = 1000, f0 = 0.5, 
-                          scale.max.input = 50)
+#res_timeseries_vpdmax <- coh(dat1 = x, dat2 = y3, times = times, norm = "powall",
+                         # sigmethod = "fast", nrand = 1000, f0 = 0.5, 
+                          #scale.max.input = 50)
 
 # band test each variable for significant coherence at different timescale bands
 annual <- c(2,3)
@@ -377,8 +377,8 @@ tv_timeseries_ppt <- coh_tv(dat1 = x, dat2 = y1, times = times, norm = "powall",
                           sigmethod = "fftsurrog1", nrand = 1000)
 tv_timeseries_tmin <- coh_tv(dat1 = x, dat2 = y2, times = times, norm = "powall",
                            sigmethod = "fftsurrog1", nrand = 1000)
-tv_timeseries_vpdmax <- coh_tv(dat1 = x, dat2 = y3, times = times, norm = "powall",
-                             sigmethod = "fftsurrog1", nrand = 1000)
+#tv_timeseries_vpdmax <- coh_tv(dat1 = x, dat2 = y3, times = times, norm = "powall",
+                             #sigmethod = "fftsurrog1", nrand = 1000)
 
 
 # average coherence across timescale bands for each timestep
@@ -419,41 +419,42 @@ avg.coh.tmin <- coh.tmin %>%
 avg.coh.tmin <- na.omit(avg.coh.tmin)  
 
 # vpdmax
-coh.vpdmax <- as.data.frame(tv_timeseries_vpdmax$signif$gt)
-colnames(coh.vpdmax) <- tv_timeseries_vpdmax$timescales
-coh.vpdmax$times <- tv_timeseries_vpdmax$times
-coh.vpdmax <- coh.vpdmax %>%
-  pivot_longer(1:67, names_to = "ts", values_to = "coh")
-coh.vpdmax$ts <- as.numeric(coh.vpdmax$ts)
-coh.vpdmax <- coh.vpdmax %>%
-  mutate(band = case_when(ts >= 2 & ts <= 3 ~ "annual",
-                          ts > 3  & ts <= 10 ~ "interannual",
-                          ts > 10 & ts <= 20 ~ "decadal",
-                          ts > 20 & ts <= 30 ~ "multidecadal"))
-
-avg.coh.vpdmax <- coh.vpdmax %>%
-  group_by(times, band) %>%
-  summarise(avg_coh = mean(coh))
-avg.coh.vpdmax <- na.omit(avg.coh.vpdmax)  
+# coh.vpdmax <- as.data.frame(tv_timeseries_vpdmax$signif$gt)
+# colnames(coh.vpdmax) <- tv_timeseries_vpdmax$timescales
+# coh.vpdmax$times <- tv_timeseries_vpdmax$times
+# coh.vpdmax <- coh.vpdmax %>%
+#   pivot_longer(1:67, names_to = "ts", values_to = "coh")
+# coh.vpdmax$ts <- as.numeric(coh.vpdmax$ts)
+# coh.vpdmax <- coh.vpdmax %>%
+#   mutate(band = case_when(ts >= 2 & ts <= 3 ~ "annual",
+#                           ts > 3  & ts <= 10 ~ "interannual",
+#                           ts > 10 & ts <= 20 ~ "decadal",
+#                           ts > 20 & ts <= 30 ~ "multidecadal"))
+# 
+# avg.coh.vpdmax <- coh.vpdmax %>%
+#   group_by(times, band) %>%
+#   summarise(avg_coh = mean(coh))
+# avg.coh.vpdmax <- na.omit(avg.coh.vpdmax)  
 
 # combine into one data frame for plotting purposes
 avg.coh.ppt$driver <- "Winter PRECIP"
 avg.coh.tmin$driver <- "Summer TEMP"
-avg.coh.vpdmax$driver <- "Average VPD"
-avg.tv.coh <- rbind(avg.coh.ppt, avg.coh.tmin, avg.coh.vpdmax)
+#avg.coh.vpdmax$driver <- "Average VPD"
+avg.tv.coh <- rbind(avg.coh.ppt, avg.coh.tmin)
 avg.tv.coh$times <- as.character(avg.tv.coh$times)
 avg.tv.coh$band <- factor(avg.tv.coh$band , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
 
 # plot avg coherence across time per band for each driver
 
-
-
+labels <- c(annual = "biennial", interannual = "multiannual", decadal = "decadal", multidecadal = "multidecadal")
+avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('Winter PRECIP', 'Summer TEMP'))
 ggplot() +
-  geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = band, color = band)) +
-  facet_wrap(~ driver)+
+  geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
+  facet_wrap(~ band, labeller=labeller(band = labels))+
   theme_bw()+
+  scale_color_manual(values = c("blue","red"))+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 90, hjust = .5, face = "plain"),
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
         axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
@@ -468,32 +469,32 @@ ggplot() +
 
 
 
-avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('Winter PRECIP', 'Summer TEMP', 'Average VPD'))
+avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('Winter PRECIP', 'Summer TEMP'))
 
-mycols1 <- colors()[c(91, 128, 99)]
+mycols1 <- colors()[c(darkgoldenrod2, cyan4)]
 mypal1 <- palette(mycols1)
-names(mypal1) = c("Summer TEMP", "Winter PRECIP", "Average VPD")
+names(mypal1) = c("Summer TEMP", "Winter PRECIP")
 colScale1 <- scale_colour_manual(name = "driver", values = mypal1)
-
+avg.tv.coh$times <- as.numeric(times)
 
 driver_band <- ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
   facet_wrap(~ band)+
   theme_bw()+
-  scale_x_discrete(breaks = seq(1900,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
-        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+  scale_x_continuous(breaks = seq(1900,2018,10))+
+  scale_color_viridis_d()+
+  theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 90, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
-        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        legend.text = element_text(color = "grey20", size = 14,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
   ylab("Average Coherence")+
-  xlab("Year")+
-  colScale1
+  xlab("Year")
 png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/env_coh.png", width = 5, height = 5, units = 'in', res = 600)
 driver_band
 dev.off()

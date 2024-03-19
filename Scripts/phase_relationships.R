@@ -4,7 +4,7 @@ source(here::here("Scripts/coh_tv.R"))
 x = avg_plot_growth_mx
 y1 = winter_ppt_mx
 y2 = summer_tmin_mx
-y3 = avg_vpdmax_mx
+#y3 = avg_vpdmax_mx
 times = 1900:2018
 
 # calculate time varying coherence for each variable across whole time series
@@ -209,6 +209,33 @@ ggplot() +
         axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
         legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Phase")+
+  xlab("Year")
+
+# putting plots together
+# plot
+avg_phase_coherence$band <- factor(avg_phase_coherence$band , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
+avg_sync_avg_phase_per_driver$band <- factor(avg_sync_avg_phase_per_driver$band , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
+avg_phase_coherence$driver <- factor(avg_phase_coherence$driver, levels=c('Winter PRECIP', 'Summer TEMP'))
+
+ggplot() +
+  geom_line(data = avg_phase_coherence, aes(x = time, y = avg_phase, group = driver, color = driver))+
+  geom_point(data = avg_sync_avg_phase_per_driver, aes(x = time, y = avg_phase, group = driver, color = driver), alpha = 0.6) +
+  facet_wrap(~ band)+
+  theme_bw()+
+  scale_y_continuous(breaks = seq(-3.1, 3.1, 0.775))+
+  scale_x_continuous(breaks = seq(1900,2018,10))+
+  scale_color_manual(values = c("blue","red"))+
+  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 12,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),

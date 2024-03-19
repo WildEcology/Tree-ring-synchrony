@@ -159,6 +159,9 @@ final_avg_data <- rbind(avis_prod, ivis_prod, dvis_prod, mvis_prod)
 final_avg_data <- full_join(avg_sync_standardband_tojoin, final_avg_data, by="x")
 final_avg_data$year <- as.character(final_avg_data$year)
 avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
+avg_sync_standardband$interval <- factor(avg_sync_standardband$interval , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+
+
 regional_avg <- ggplot() +
   geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
   geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, color = band),
@@ -175,6 +178,7 @@ regional_avg <- ggplot() +
     show.legend = F) +
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
+  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial", "multiannual","decadal","multidecadal"))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
@@ -198,6 +202,7 @@ final_avg_data$band <- factor(final_avg_data$band, levels=c('annual', 'interannu
 ggplot() +
   geom_line(data = avg_sync_standardband, aes(x = year, y = z_scores, group = interval, color = interval)) +
   theme_bw()+
+  scale_color_brewer(palette="Spectral", type = "seq")+
   scale_x_discrete(breaks = seq(1900,2018,10))+
   theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 90, hjust = .5, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
@@ -223,12 +228,7 @@ long <- avg_sync_standardband %>%
 long_av <- final_avg_data %>%
   filter(band %in% longbands)
 
-mycols1 <- colors()[c(91, 128, 148, 99)]
-mypal1 <- palette(mycols1)
-names(mypal1) = c("annual", "interannual", "decadal", "multidecadal")
-colScale1 <- scale_colour_manual(name = "interval", values = mypal1)
-colScale2 <- scale_fill_manual(name = "interval", values = mypal1)
-colScale2 <- scale_fill_manual(name = "band", values = mypal1)
+
 regional_avg <- ggplot() +
   #geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
   geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, color = band),
@@ -244,7 +244,7 @@ regional_avg <- ggplot() +
     alpha = 0.2,
     show.legend = F) +
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  #scale_colour_manual(name = "band", values = mypal1)+
+  scale_color_brewer(palette="Spectral", type = "seq")+
   theme_bw()+
   theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
@@ -258,9 +258,7 @@ regional_avg <- ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average synchrony")+
   ylim(0,1)+
-  xlab("Year")+
-  colScale1+
-  colScale2
+  xlab("Year")
 
 png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/avg_sync.png", width = 5, height = 5, units = 'in', res = 600)
 regional_avg
