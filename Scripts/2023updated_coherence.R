@@ -2,7 +2,7 @@
 source(here::here("updated_cleaning_code.R"))
 source(here::here("Scripts/coh_tv.R"))
 
-#### Full Time Series ##########################################################
+ #### Full Time Series ##########################################################
 # calculate coherence of each predictor across whole time series
 x = avg_plot_growth_mx
 y1 = winter_ppt_mx
@@ -368,7 +368,7 @@ late_ppt_coh <- cbind(late_se_ppt_annual, late_se_ppt_interannual, late_se_ppt_d
 x = avg_plot_growth_mx
 y1 = winter_ppt_mx
 y2 = summer_tmin_mx
-y3 = avg_vpdmax_mx
+#y3 = avg_vpdmax_mx
 times = 1900:2018
 
 # calculate time varying coherence for each variable across whole time series
@@ -390,8 +390,8 @@ coh.ppt <- coh.ppt %>%
   pivot_longer(1:67, names_to = "ts", values_to = "coh")
 coh.ppt$ts <- as.numeric(coh.ppt$ts)
 coh.ppt <- coh.ppt %>%
-  mutate(band = case_when(ts >= 2 & ts <= 3 ~ "annual",
-                          ts > 3  & ts <= 10 ~ "interannual",
+  mutate(band = case_when(ts >= 2 & ts <= 3 ~ "biennial",
+                          ts > 3  & ts <= 10 ~ "multiannual",
                           ts > 10 & ts <= 20 ~ "decadal",
                           ts > 20 & ts <= 30 ~ "multidecadal"))
 
@@ -408,8 +408,8 @@ coh.tmin <- coh.tmin %>%
   pivot_longer(1:67, names_to = "ts", values_to = "coh")
 coh.tmin$ts <- as.numeric(coh.tmin$ts)
 coh.tmin <- coh.tmin %>%
-  mutate(band = case_when(ts >= 2 & ts <= 3 ~ "annual",
-                          ts > 3  & ts <= 10 ~ "interannual",
+  mutate(band = case_when(ts >= 2 & ts <= 3 ~ "biennial",
+                          ts > 3  & ts <= 10 ~ "multiannual",
                           ts > 10 & ts <= 20 ~ "decadal",
                           ts > 20 & ts <= 30 ~ "multidecadal"))
 
@@ -437,17 +437,17 @@ avg.coh.tmin <- na.omit(avg.coh.tmin)
 # avg.coh.vpdmax <- na.omit(avg.coh.vpdmax)  
 
 # combine into one data frame for plotting purposes
-avg.coh.ppt$driver <- "Winter PRECIP"
-avg.coh.tmin$driver <- "Summer TEMP"
+avg.coh.ppt$driver <- "ppt"
+avg.coh.tmin$driver <- "tmin"
 #avg.coh.vpdmax$driver <- "Average VPD"
 avg.tv.coh <- rbind(avg.coh.ppt, avg.coh.tmin)
 avg.tv.coh$times <- as.character(avg.tv.coh$times)
-avg.tv.coh$band <- factor(avg.tv.coh$band , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+avg.tv.coh$band <- factor(avg.tv.coh$band , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 
 # plot avg coherence across time per band for each driver
 
 labels <- c(annual = "biennial", interannual = "multiannual", decadal = "decadal", multidecadal = "multidecadal")
-avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('Winter PRECIP', 'Summer TEMP'))
+avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('ppt', 'tmin'))
 ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
   facet_wrap(~ band, labeller=labeller(band = labels))+
@@ -467,7 +467,7 @@ ggplot() +
   ylab("Average Coherence")+
   xlab("Year")
 
-
+# another plot 
 
 avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('Winter PRECIP', 'Summer TEMP'))
 

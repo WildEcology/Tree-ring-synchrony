@@ -126,6 +126,35 @@ regional_avg_env <- ggplot(data = avg_env_sync, aes(x = year, y = avg_sync, grou
   ylab("Average synchrony")+
   xlab("Year")
 
+#### plotting avg env sync vs avg tv coh ####
+avg_env_sync <- avg_env_sync %>%
+  rename("band" = interval, "times" = year)
+avg_env_sync$times <- as.character(avg_env_sync$times)
+
+#combine datasets
+avg_sync_avg_coh_env <- right_join(avg.tv.coh, avg_env_sync)
+avg_sync_avg_coh_env$times <- as.numeric(avg_sync_avg_coh_env$times)
+avg_sync_avg_coh_env$driver <- factor(avg_sync_avg_coh_env$driver, levels=c('ppt', 'tmin'))
+avg_sync_avg_coh_env$band<- factor(avg_sync_avg_coh_env$band, levels=c("biennial","multiannual","decadal", "multidecadal"))
+avgsynccohenv<- ggplot() +
+  geom_point(data = avg_sync_avg_coh_env, aes(x = avg_coh, y = avg_sync, group = driver, color = driver), size = 3) +
+  facet_wrap(~ band)+
+  theme_bw()+
+  scale_color_manual(values = c("blue","red"))+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Coherence")+
+  xlab("Average Synchrony")
+
+
 #### Proportion Sync ####
 #PPT
 # calculate signficance thresholds 

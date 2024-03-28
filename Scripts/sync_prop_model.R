@@ -1,7 +1,7 @@
 
 
 # source the data
-source(here::here("scripts/cleaning_code.R"))
+source(here::here("updated_cleaning_code.R"))
 
 
 
@@ -45,7 +45,7 @@ async <- thresholds[2]
 async <- as.numeric(async)
 
 M2 <- M1[,1:66]
-year <- 1901:2018
+year <- 1900:2018
 M2$year <- year
 # classify sync, async and ns
 M2<- M2 %>%
@@ -60,10 +60,10 @@ M2events <- M2 %>%
 M2events$ts <- as.numeric(M2events$ts)
 M2events$ts <- as.numeric(M2events$ts)
 M2events <- M2events %>%
-  mutate(interval = case_when(ts >= 2 & ts <= 5 ~ "short",
-                              ts > 5 & ts <= 10 ~ "medium",
-                              ts > 10 & ts <= 20 ~ "long",
-                              ts > 20 & ts <= 30 ~ "xlong"))
+  mutate(interval = case_when(ts >= 2 & ts <= 3 ~ "biennial",
+                              ts > 3 & ts <= 10 ~ "multiannual",
+                              ts > 10 & ts <= 20 ~ "decadal",
+                              ts > 20 & ts <= 30 ~ "multidecadal"))
 
 
 #### PROPORTIONS OF SIGNFICANT SYNCHRONY ####
@@ -135,7 +135,7 @@ wav<-Mod(get_values(res_growth_wpmf))
 times<-get_times(res_growth_wpmf)
 timescales<-get_timescales(res_growth_wpmf)
 
-plotmag(res_growth_wpmf)
+plotmag(res_growth_wmf)
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=upper,drawlabels=F,lwd=2,
                   xaxs="i",xaxt="n",xaxp=c(0,1,5),las=1,frame=F,lty=1, add=TRUE)
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=lower,drawlabels=F,lwd=2,

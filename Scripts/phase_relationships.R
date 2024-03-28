@@ -220,7 +220,7 @@ ggplot() +
 # plot
 avg_phase_coherence$band <- factor(avg_phase_coherence$band , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 avg_sync_avg_phase_per_driver$band <- factor(avg_sync_avg_phase_per_driver$band , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
-avg_phase_coherence$driver <- factor(avg_phase_coherence$driver, levels=c('Winter PRECIP', 'Summer TEMP'))
+avg_phase_coherence$driver <- factor(avg_phase_coherence$driver, levels=c('ppt', 'temp'))
 
 ggplot() +
   geom_line(data = avg_phase_coherence, aes(x = time, y = avg_phase, group = driver, color = driver))+
@@ -242,3 +242,66 @@ ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average Phase")+
   xlab("Year")
+
+## phases and raw env ##
+avg_phase_coherence <- rbind(avg_phase_tvcoh_ppt, avg_phase_tvcoh_tmin)
+
+winter_ppt_reg <- winter_ppt %>%
+  rename("ppt" = winter_ppt) %>%
+  rename("time" = wateryear)
+
+winter_ppt_reg<- winter_ppt_reg %>%
+  filter(time > 1900)
+winter_ppt_reg<- winter_ppt_reg%>%
+  group_by(time) %>%
+  summarise(regional_avg_ppt = mean(ppt))
+winter_ppt_avg_phase <- left_join(avg_phase_coherence, winter_ppt_reg) %>%
+  filter(driver == "ppt") 
+
+
+reg_avg_ppt_phase<- ggplot(data = winter_ppt_avg_phase, aes(x = regional_avg_ppt, y = avg_phase, color = band)) +
+  geom_point(data = winter_ppt_avg_phase, aes(x = regional_avg_ppt, y = avg_phase, color = band), alpha = 0.5) +
+  geom_smooth(method = "lm", se= FALSE)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average phase")+
+  xlab("Regional avg ppt")
+
+
+summer_tmin_reg <- summer_tmin %>%
+  rename("tmin" = summer_tmin) %>%
+  rename("time" = year)
+
+summer_tmin_reg<- summer_tmin_reg %>%
+  filter(time > 1900)
+summer_tmin_reg<- summer_tmin_reg%>%
+  group_by(time) %>%
+  summarise(regional_avg_tmin = mean(tmin))
+summer_tmin_avg_phase <- left_join(avg_phase_coherence, summer_tmin_reg) %>%
+  filter(driver == "tmin") 
+
+reg_avg_tmin_phase<- ggplot(data = summer_tmin_avg_phase, aes(x = regional_avg_tmin, y = avg_phase, color = band)) +
+  geom_point(data = summer_tmin_avg_phase, aes(x = regional_avg_tmin, y = avg_phase, color = band), alpha = 0.5) +
+  geom_smooth(method = "lm", se= FALSE)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average phase")+
+  xlab("Regional avg tmin")
