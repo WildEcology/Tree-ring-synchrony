@@ -35,8 +35,8 @@ M2events <- M2 %>%
 M2events$ts <- as.numeric(M2events$ts)
 M2events$ts <- as.numeric(M2events$ts)
 M2events <- M2events %>%
-  mutate(interval = case_when(ts >= 2 & ts <= 5 ~ "annual",
-                              ts > 5 & ts <= 10 ~ "interannual",
+  mutate(interval = case_when(ts >= 2 & ts <= 3 ~ "biennial",
+                              ts > 3 & ts <= 10 ~ "multiannual",
                               ts > 10 & ts <= 20 ~ "decadal",
                               ts > 20 & ts <= 30 ~ "multidecadal"))
 
@@ -48,7 +48,7 @@ avg_sync <- M2events %>%
 avg_sync_standardband <- avg_sync %>%
   ungroup()%>%
   group_by(interval)%>%
-  mutate(z_scores = (avg_sync - mean(avg_sync))/sd(avg_sync))
+  mutate(z_scores = (avg_sync - (mean(avg_sync))/sd(avg_sync)))
 
 avg_sync_standardband <- na.omit(avg_sync_standardband)
 avg_sync_standardband$year <- as.numeric(avg_sync_standardband$year)
@@ -61,7 +61,7 @@ avg_sync_standardband$x <- as.numeric(round(avg_sync_standardband$scaled_year,2)
 library(glmmTMB)
 library(ggeffects)
 avg_sync_annual <- avg_sync_standardband %>%
-  filter(interval == "annual")
+  filter(interval == "biennial")
 anull_model <- glmmTMB(avg_sync~1, 
                        data = avg_sync_annual)
 
@@ -78,7 +78,7 @@ AIC(anull_model, alinear_model, aquad_model)
 
 
 avg_sync_inter <- avg_sync_standardband%>%
-  filter(interval == "interannual")
+  filter(interval == "multiannual")
 
 inull_model <- glmmTMB(avg_sync~1, 
                        data = avg_sync_inter)
@@ -133,12 +133,12 @@ avis_prod <- ggpredict(aquad_model,
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
                        ci.lvl = .95)
-avis_prod$band <- "annual"
+avis_prod$band <- "biennial"
 ivis_prod <- ggpredict(iquad_model, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
                        ci.lvl = .95)
-ivis_prod$band <- "interannual"
+ivis_prod$band <- "multiannual"
 dvis_prod <- ggpredict(dlinear_model, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
@@ -159,7 +159,8 @@ final_avg_data <- rbind(avis_prod, ivis_prod, dvis_prod, mvis_prod)
 final_avg_data <- full_join(avg_sync_standardband_tojoin, final_avg_data, by="x")
 final_avg_data$year <- as.character(final_avg_data$year)
 avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
-avg_sync_standardband$interval <- factor(avg_sync_standardband$interval , levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+avg_sync_standardband$interval <- factor(avg_sync_standardband$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
+
 
 
 regional_avg <- ggplot() +
@@ -193,11 +194,11 @@ regional_avg <- ggplot() +
   xlab("Year")
 
 
-
+# plot z-scores
 avg_sync_standardband <- na.omit(avg_sync_standardband)
 avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
-avg_sync_standardband$interval <- factor(avg_sync_standardband$interval, levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
-final_avg_data$band <- factor(final_avg_data$band, levels=c('annual', 'interannual', 'decadal', 'multidecadal'))
+avg_sync_standardband$interval <- factor(avg_sync_standardband$interval, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
+final_avg_data$band <- factor(final_avg_data$band, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 
 ggplot() +
   geom_line(data = avg_sync_standardband, aes(x = year, y = z_scores, group = interval, color = interval)) +

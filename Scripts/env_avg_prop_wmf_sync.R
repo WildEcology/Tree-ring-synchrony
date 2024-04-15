@@ -1,9 +1,9 @@
 
 # source the data from cleaning code
-source(here::here("scripts/cleaning_code.R"))
+source(here::here("updated_cleaning_code.R"))
 
 # produce wmf's for ppt and tmin
-tmin_wmf <- plotmag(res_tmin_wmf)
+tmin_wmf <- plotmag(res_tmin_wmf) 
 ppt_wmf <- plotmag(res_ppt_wmf)
 
 
@@ -137,7 +137,7 @@ avg_sync_avg_coh_env$times <- as.numeric(avg_sync_avg_coh_env$times)
 avg_sync_avg_coh_env$driver <- factor(avg_sync_avg_coh_env$driver, levels=c('ppt', 'tmin'))
 avg_sync_avg_coh_env$band<- factor(avg_sync_avg_coh_env$band, levels=c("biennial","multiannual","decadal", "multidecadal"))
 avgsynccohenv<- ggplot() +
-  geom_point(data = avg_sync_avg_coh_env, aes(x = avg_coh, y = avg_sync, group = driver, color = driver), size = 3) +
+  geom_point(data = avg_sync_avg_coh_env, aes(x = avg_sync, y = avg_coh, group = driver, color = driver), size = 3) +
   facet_wrap(~ band)+
   theme_bw()+
   scale_color_manual(values = c("blue","red"))+
@@ -153,6 +153,133 @@ avgsynccohenv<- ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average Coherence")+
   xlab("Average Synchrony")
+
+
+## plotting avg coherence with raw ppt and tmin values
+winter_ppt_reg <- winter_ppt %>%
+  rename("ppt" = winter_ppt)
+winter_ppt_reg <- winter_ppt %>%
+  rename("times" = wateryear)
+
+winter_ppt_reg$times <- as.character(winter_ppt_reg$times)
+winter_ppt_reg<- winter_ppt_reg %>%
+  group_by(times) %>%
+  summarise(regional_avg_ppt = mean(ppt))
+winter_ppt_avg_coh <- left_join(avg.tv.coh, winter_ppt_reg) %>%
+  filter(driver == "ppt") 
+
+
+reg_avg_ppt_coherence<- ggplot(data = winter_ppt_avg_coh, aes(x = regional_avg_ppt, y = avg_coh, color = band)) +
+  geom_point(data = winter_ppt_avg_coh, aes(x = regional_avg_ppt, y = avg_coh, color = band), alpha = 0.5) +
+  geom_smooth(method = "lm", se= FALSE)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Coherence")+
+  xlab("Regional avg ppt")
+
+# lets try variability in ppt
+
+winter_ppt_var_space <- winter_ppt %>% # in a given year how variable is ppt
+  group_by(wateryear)%>%
+  summarize(var_ppt = var(winter_ppt))
+
+winter_ppt_var_space <- winter_ppt_var_space%>%
+  rename("ppt" = var_ppt)
+winter_ppt_var_space <- winter_ppt_var_space %>%
+  rename("times" = wateryear)
+
+winter_ppt_var_space$times <- as.character(winter_ppt_var_space$times)
+
+winter_ppt_var_coh <- left_join(avg.tv.coh, winter_ppt_var_space) %>%
+  filter(driver == "ppt") 
+
+reg_var_ppt_coh<- ggplot(data = winter_ppt_var_coh, aes(x = ppt, y = avg_coh, color = band)) +
+  geom_point(data = winter_ppt_var_coh, aes(x = ppt, y = avg_coh, color = band), alpha = 0.5) +
+  geom_smooth(method = "lm", se= FALSE)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Coherence")+
+  xlab("Regional variability in ppt")
+
+# repeat for tmin
+summer_tmin <- summer_tmin %>%
+  rename("tmin" = summer_tmin)
+summer_tmin <- summer_tmin %>%
+  rename("times" = year)
+
+summer_tmin$times <- as.character(summer_tmin$times)
+summer_tmin_reg<- summer_tmin %>%
+  group_by(times) %>%
+  summarise(regional_avg_tmin = mean(tmin))
+summer_tmin_avg_coh <- left_join(avg.tv.coh, summer_tmin_reg) %>%
+  filter(driver == "tmin")
+
+
+reg_avg_ppt_coherence<- ggplot(data = summer_tmin_avg_coh, aes(x = regional_avg_tmin, y = avg_coh, color = band)) +
+  geom_point(data = summer_tmin_avg_coh, aes(x = regional_avg_tmin, y = avg_coh, color = band), alpha = 0.5) +
+  geom_smooth(method = "lm", se= FALSE)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Coherence")+
+  xlab("Regional avg tmin")
+
+summer_tmin_var_space <- summer_tmin %>% # in a given year how variable is ppt
+  group_by(year)%>%
+  summarize(var_tmin = var(summer_tmin))
+
+summer_tmin_var_space <- summer_tmin_var_space%>%
+  rename("tmin" = var_tmin)
+summer_tmin_var_space <- summer_tmin_var_space %>%
+  rename("times" = year)
+
+summer_tmin_var_space$times <- as.character(summer_tmin_var_space$times)
+
+summer_tmin_var_coh <- left_join(avg.tv.coh, summer_tmin_var_space) %>%
+  filter(driver == "tmin") 
+
+reg_var_tmin_coh<- ggplot(data = summer_tmin_var_coh, aes(x = tmin, y = avg_coh, color = band)) +
+  geom_point(data = summer_tmin_var_coh, aes(x = tmin, y = avg_coh, color = band), alpha = 0.5) +
+  geom_smooth(method = "lm", se= FALSE)+
+  theme_bw()+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Coherence")+
+  xlab("Regional variability in tmin")
 
 
 #### Proportion Sync ####

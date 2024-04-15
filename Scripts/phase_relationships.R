@@ -118,8 +118,8 @@ avg_phase_coherence <- rbind(avg_phase_tvcoh_ppt, avg_phase_tvcoh_tmin)
 
 
 ggplot() +
-  geom_line(data = avg_phase_coherence, aes(x = time, y = avg_phase, group = driver, color = driver)) +
-  facet_wrap(~ band)+
+  geom_line(data = avg_phase_coherence, aes(x = time, y = avg_phase, group = band, color = band)) +
+  facet_wrap(~ driver)+
   theme_bw()+
   #scale_x_discrete(breaks = seq(1900,2018,10))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 90, hjust = .5, face = "plain"),

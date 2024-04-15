@@ -107,7 +107,7 @@ winter_ppt <- winter_ppt %>%
 # calculate avg winter precip per plot per water-year
 winter_ppt <- winter_ppt %>%
   group_by(plot, wateryear)%>%
-  summarise(winter_ppt = sum(ppt))%>%
+  summarise(winter_ppt = mean(ppt))%>%
   filter(wateryear >= 1900)%>%
   filter(wateryear <= 2018)
 
