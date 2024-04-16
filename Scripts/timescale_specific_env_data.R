@@ -316,7 +316,7 @@ load("~/Documents/GitHub/Tree-ring-synchrony/Data/avg_growth_sync.RData")
 avg_sync_standardband <- avg_sync_standardband %>%
   select(1:3)
 avg_sync_standardband$year <- as.numeric(avg_sync_standardband$year)
-avg_growth_sync_timescale_env <- inner_join(timescale_spec_dat, avg_sync_standardband, by=join_by(window_year == year, band == interval))
+avg_growth_sync_timescale_env <- inner_join(timescale_spec_avg_dat, avg_sync_standardband, by=join_by(window_year == year, band == interval))
 
 timescale_avg_rwi_avg_sync<- ggplot(data = avg_growth_sync_timescale_env, aes(x = window_avg_rwi, y = avg_sync, color = band)) +
   geom_point(data = avg_growth_sync_timescale_env, aes(x = window_avg_rwi, y = avg_sync, color = band), alpha = 0.5) +
@@ -336,8 +336,22 @@ timescale_avg_rwi_avg_sync<- ggplot(data = avg_growth_sync_timescale_env, aes(x 
   ylab("average growth synchrony")
 
 
-timescale_avg_tmin_avg_sync<- ggplot(data = avg_growth_sync_timescale_env, aes(x = window_avg_rwi, y = avg_sync, color = band)) +
-  geom_point(data = avg_growth_sync_timescale_env, aes(x = window_avg_tmin, y = avg_sync, color = band), alpha = 0.5) +
+
+# load in avg coherence data
+avg_tv_coh <- readRDS("~/Documents/GitHub/Tree-ring-synchrony/Data/avg_tv_coh.rds")
+
+# clean up in order to join with the timescale specific environmental data
+avg_tv_coh <- avg_tv_coh %>%
+  pivot_wider(names_from = "driver", values_from = "avg_coh")%>%
+  rename(avg_ppt_coh = "ppt")%>%
+  rename(avg_tmin_coh = "tmin") %>%
+  rename(year = "times")
+avg_tv_coh$year <- as.numeric(avg_tv_coh$year)
+timescale_spec_avg_dat$band <- factor(timescale_spec_avg_dat$band, levels = c("biennial", "multiannual", "decadal", "multidecadal" ))
+avg_coh_timescale_env <- inner_join(timescale_spec_avg_dat,avg_tv_coh, by=join_by(window_year == year, band == band))
+
+timescale_avg_ppt_avg_coh<- ggplot(data = avg_coh_timescale_env, aes(x = window_avg_ppt, y = avg_ppt_coh, group = band, color = band)) +
+  geom_point(data = avg_coh_timescale_env, aes(x = window_avg_ppt, y = avg_ppt_coh, group = band, color = band), alpha = 0.5) +
   geom_smooth(method = "loess", se= FALSE)+
   theme_bw()+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
@@ -350,31 +364,25 @@ timescale_avg_tmin_avg_sync<- ggplot(data = avg_growth_sync_timescale_env, aes(x
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  xlab("timescale specific tmin")+
-  ylab("average growth synchrony")
-
+  xlab("timescale specific ppt")+
+  ylab("average coherence")
 
 
 #### Test sensitivity to drivers ####
 
-# remove data points with window's that don't exist in the data
-timescale_spec_dat <- timescale_spec_dat %>%
-  filter(w_start >= 1900) %>%
-  filter(w_end <= 2018)
-
 ggplot()+
-  geom_line(data = timescale_spec_dat, aes(x=window_year, y=window_avg_ppt, color = band))+
+  geom_line(data = timescale_spec_avg_dat, aes(x=window_year, y=window_avg_ppt, color = band))+
   facet_wrap(~band) +
   theme_bw()
 
 ggplot()+
-  geom_line(data = timescale_spec_dat, aes(x=window_year, y=window_avg_tmin, color = band))+
+  geom_line(data = timescale_spec_avg_dat, aes(x=window_year, y=window_avg_tmin, color = band))+
   facet_wrap(~band) +
   theme_bw()
 
 
 ggplot()+
-  geom_line(data = timescale_spec_dat, aes(x=window_year, y=window_avg_rwi, color = band))+
+  geom_line(data = timescale_spec_avg_dat, aes(x=window_year, y=window_avg_rwi, color = band))+
   facet_wrap(~band) +
   theme_bw()
 
@@ -402,16 +410,21 @@ timescale_spec_dat <- inner_join(timescale_specific_env, timescale_specific_rwi,
                                  by = c("plot", "window_year", "band", "w_start",
                                         "w_end", "window_lenth"))
 
+# remove data points with window's that don't exist in the data
+timescale_spec_dat <- timescale_spec_dat %>%
+  filter(w_start >= 1900) %>%
+  filter(w_end <= 2018)
+
 ts_var_dat <- timescale_spec_dat %>%
   group_by(window_year, band)%>%
   mutate(var_ppt = var(window_ppt), var_tmin = var(window_tmin), var_rwi = var(window_rwi)) %>%
   distinct(window_year, var_ppt, var_tmin, var_rwi)
 
-final_var_dat <- inner_join(timescale_spec_avg_dat, ts_var_dat)
+final_var_dat <- inner_join(ts_var_dat,avg_sync_standardband, by=join_by(window_year == year, band == interval))
 
 ggplot()+
-  geom_point(data = final_var_dat, aes(x=window_avg_rwi, y=var_rwi, color = band), alpha = 0.4)+
-  geom_smooth(data = final_var_dat, aes(x=window_avg_rwi, y=var_rwi, color = band),
+  geom_point(data = final_var_dat, aes(x=var_ppt, y=avg_sync, color = band), alpha = 0.4)+
+  geom_smooth(data = final_var_dat, aes(x=var_ppt, y=avg_sync, color = band),
               method = "lm", se = FALSE)+
   facet_wrap(~band) +
   theme_bw()

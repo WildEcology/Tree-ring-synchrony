@@ -33,9 +33,20 @@ dev.off()
 hist(avg_plot_growth$avg_growth)
 
 ## ppt ##
+colnames(winter_ppt_wide) <- 1900:2018
+
+winter_ppt_trend <- winter_ppt_wide %>%
+  pivot_longer(1:119, names_to = "wateryear", values_to = "ppt")%>%
+  group_by(wateryear)%>%
+  summarize(trend = mean(ppt))
+
+winter_ppt_trend$plot <- "Trend"
+
 winter_ppt$wateryear <- as.character(winter_ppt$wateryear)
+winter_ppt_trend$wateryear <- as.character(winter_ppt_trend$wateryear)
 raw_ppt <- ggplot()+
-  geom_line(data = winter_ppt, aes(x=wateryear, y=winter_ppt, group=plot, col=plot))+
+  geom_line(data = winter_ppt, mapping = aes(x=wateryear, y=winter_ppt, group=plot, col=plot))+
+  geom_line(data = winter_ppt_trend, mapping = aes(x=wateryear, y=trend), color = "black")+
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
