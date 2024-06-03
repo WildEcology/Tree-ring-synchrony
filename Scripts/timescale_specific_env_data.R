@@ -42,7 +42,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+
   tmin_3 <- summer_tmin %>% 
     filter(year %in% select_years) %>%
     summarise(window_tmin = mean(summer_tmin)) %>%
@@ -431,5 +431,45 @@ ggplot()+
 
 ggplot()+
   geom_line(data = final_var_dat, aes(x=window_year, y=var_rwi, color = band))+
+  facet_wrap(~band) +
+  theme_bw()
+
+
+
+#### ts env vs env sync ####
+
+avg_env_sync_wide <- avg_env_sync %>%
+  pivot_wider(names_from = "driver", values_from = "avg_sync")
+avg_env_sync_wide <- avg_env_sync_wide %>%
+  rename(avg_ppt_sync = "ppt", avg_tmin_sync = "tmin")
+avg_env_sync_wide$times <- as.numeric(avg_env_sync_wide$times)
+
+avg_env_sync_ts_env <- inner_join(timescale_spec_avg_dat,avg_env_sync_wide, by=join_by(window_year == times, band == band))
+
+ggplot()+
+  geom_point(data = avg_env_sync_ts_env, aes(x=window_avg_tmin, y=avg_ppt_sync, color = band), alpha = 0.4)+
+  geom_smooth(data = avg_env_sync_ts_env, aes(x=window_avg_tmin, y=avg_ppt_sync, color = band),
+              method = "loess", se = FALSE)+
+  facet_wrap(~band) +
+  theme_bw()
+
+ggplot()+
+  geom_point(data = avg_coh_timescale_env, aes(x=window_avg_tmin, y=avg_ppt_coh, color = band), alpha = 0.4)+
+  geom_smooth(data = avg_coh_timescale_env, aes(x=window_avg_tmin, y=avg_ppt_coh, color = band),
+              method = "loess", se = FALSE)+
+  facet_wrap(~band) +
+  theme_bw()
+
+ggplot()+
+  geom_point(data = avg_env_sync_ts_env, aes(x=window_avg_ppt, y=avg_ppt_sync, color = band), alpha = 0.4)+
+  geom_smooth(data = avg_env_sync_ts_env, aes(x=window_avg_ppt, y=avg_ppt_sync, color = band),
+              method = "loess", se = FALSE)+
+  facet_wrap(~band) +
+  theme_bw()
+
+ggplot()+
+  geom_point(data = avg_coh_timescale_env, aes(x=window_avg_ppt, y=avg_ppt_coh, color = band), alpha = 0.4)+
+  geom_smooth(data = avg_coh_timescale_env, aes(x=window_avg_ppt, y=avg_ppt_coh, color = band),
+              method = "loess", se = FALSE)+
   facet_wrap(~band) +
   theme_bw()

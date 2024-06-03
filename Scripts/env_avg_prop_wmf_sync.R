@@ -132,6 +132,7 @@ avg_env_sync <- avg_env_sync %>%
 avg_env_sync$times <- as.character(avg_env_sync$times)
 
 #combine datasets
+avg.tv.coh <- readRDS("/Users/kaitlynmcknight/Documents/GitHub/Tree-ring-synchrony/Data/avg_tv_coh.rds")
 avg_sync_avg_coh_env <- right_join(avg.tv.coh, avg_env_sync)
 avg_sync_avg_coh_env$times <- as.numeric(avg_sync_avg_coh_env$times)
 avg_sync_avg_coh_env$driver <- factor(avg_sync_avg_coh_env$driver, levels=c('ppt', 'tmin'))
