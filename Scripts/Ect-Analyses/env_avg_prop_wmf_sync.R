@@ -1,6 +1,6 @@
 
 # source the data from cleaning code
-source(here::here("updated_cleaning_code.R"))
+source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
 
 # produce wmf's for ppt and tmin
 tmin_wmf <- plotmag(res_tmin_wmf) 
@@ -125,6 +125,254 @@ regional_avg_env <- ggplot(data = avg_env_sync, aes(x = year, y = avg_sync, grou
         panel.grid.major.x=element_blank()) +
   ylab("Average synchrony")+
   xlab("Year")
+
+# testing model fit for both variables
+library(glmmTMB)
+library(ggeffects)
+avg_env_sync$year <- as.numeric(avg_env_sync$year)
+
+
+avg_env_sync$interval <- as.factor(avg_env_sync$interval)
+avg_env_sync$scaled_year <- scale(avg_env_sync$year)
+avg_env_sync$x <- as.numeric(round(avg_env_sync$scaled_year,2))
+
+# ppt
+avg_env_sync_ppt <- avg_env_sync %>%
+  filter(driver == "ppt")
+
+# biennial 
+avg_env_sync_ppt_B <- avg_env_sync_ppt%>%
+  filter(interval == "biennial")
+Bnull_model_ppt <- glmmTMB(avg_sync~1, 
+                       data = avg_env_sync_ppt_B)
+
+Blinear_model_ppt <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_ppt_B)
+
+Bquad_model_ppt <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_ppt_B)
+
+AIC(Bnull_model_ppt, Blinear_model_ppt, Bquad_model_ppt)
+# linear fit best
+
+# multiannual 
+avg_env_sync_ppt_MA <- avg_env_sync_ppt%>%
+  filter(interval == "multiannual")
+MAnull_model_ppt <- glmmTMB(avg_sync~1, 
+                           data = avg_env_sync_ppt_MA)
+
+MAlinear_model_ppt <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_ppt_MA)
+
+MAquad_model_ppt <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_ppt_MA)
+
+AIC(MAnull_model_ppt, MAlinear_model_ppt, MAquad_model_ppt)
+# quad fit best
+
+# biennial 
+avg_env_sync_ppt_D <- avg_env_sync_ppt%>%
+  filter(interval == "decadal")
+Dnull_model_ppt <- glmmTMB(avg_sync~1, 
+                           data = avg_env_sync_ppt_D)
+
+Dlinear_model_ppt <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_ppt_D)
+
+Dquad_model_ppt <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_ppt_D)
+
+AIC(Dnull_model_ppt, Dlinear_model_ppt, Dquad_model_ppt)
+# quad fit best
+
+# multidecadal
+avg_env_sync_ppt_MD <- avg_env_sync_ppt%>%
+  filter(interval == "multidecadal")
+MDnull_model_ppt <- glmmTMB(avg_sync~1, 
+                           data = avg_env_sync_ppt_MD)
+
+MDlinear_model_ppt <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_ppt_MD)
+
+MDquad_model_ppt <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_ppt_MD)
+
+AIC(MDnull_model_ppt, MDlinear_model_ppt, MDquad_model_ppt)
+# quad fit best
+
+
+# All together:
+Bvis_prod_ppt <- ggpredict(Blinear_model_ppt, 
+                       terms = c("scaled_year[all]"), 
+                       type = "fe", 
+                       ci.lvl = .95)
+Bvis_prod_ppt$interval <- "biennial"
+MAvis_prod_ppt <- ggpredict(MAquad_model_ppt, 
+                       terms = c("scaled_year[all]"), 
+                       type = "fe", 
+                       ci.lvl = .95)
+MAvis_prod_ppt$interval <- "multiannual"
+Dvis_prod_ppt <- ggpredict(Dquad_model_ppt, 
+                       terms = c("scaled_year[all]"), 
+                       type = "fe", 
+                       ci.lvl = .95)
+Dvis_prod_ppt$interval <- "decadal"
+MDvis_prod_ppt <- ggpredict(MDquad_model_ppt, 
+                       terms = c("scaled_year[all]"), 
+                       type = "fe", 
+                       ci.lvl = .95)
+MDvis_prod_ppt$interval <- "multidecadal"
+
+final_avg_ppt_data <- rbind(Bvis_prod_ppt, MAvis_prod_ppt, Dvis_prod_ppt, MDvis_prod_ppt)
+
+
+# tmin
+avg_env_sync_tmin <- avg_env_sync %>%
+  filter(driver == "tmin")
+
+# biennial 
+avg_env_sync_tmin_B <- avg_env_sync_tmin%>%
+  filter(interval == "biennial")
+Bnull_model_tmin <- glmmTMB(avg_sync~1, 
+                           data = avg_env_sync_tmin_B)
+
+Blinear_model_tmin <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_tmin_B)
+
+Bquad_model_tmin <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_tmin_B)
+
+AIC(Bnull_model_tmin, Blinear_model_tmin, Bquad_model_tmin)
+# quad fit best
+
+# multiannual 
+avg_env_sync_tmin_MA <- avg_env_sync_tmin%>%
+  filter(interval == "multiannual")
+MAnull_model_tmin <- glmmTMB(avg_sync~1, 
+                            data = avg_env_sync_tmin_MA)
+
+MAlinear_model_tmin <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_tmin_MA)
+
+MAquad_model_tmin <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_tmin_MA)
+
+AIC(MAnull_model_tmin, MAlinear_model_tmin, MAquad_model_tmin)
+# linear fit best
+
+# decadal 
+avg_env_sync_tmin_D <- avg_env_sync_tmin%>%
+  filter(interval == "decadal")
+Dnull_model_tmin <- glmmTMB(avg_sync~1, 
+                           data = avg_env_sync_tmin_D)
+
+Dlinear_model_tmin <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_tmin_D)
+
+Dquad_model_tmin <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_tmin_D)
+
+AIC(Dnull_model_tmin, Dlinear_model_tmin, Dquad_model_tmin)
+# quad fit best
+
+# multidecadal
+avg_env_sync_tmin_MD <- avg_env_sync_tmin%>%
+  filter(interval == "multidecadal")
+MDnull_model_tmin <- glmmTMB(avg_sync~1, 
+                            data = avg_env_sync_tmin_MD)
+
+MDlinear_model_tmin <-
+  glmmTMB(avg_sync ~ scaled_year, 
+          data= avg_env_sync_tmin_MD)
+
+MDquad_model_tmin <-
+  glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
+          data= avg_env_sync_tmin_MD)
+
+AIC(MDnull_model_tmin, MDlinear_model_tmin, MDquad_model_tmin)
+# quad fit best
+
+# All together:
+Bvis_prod_tmin <- ggpredict(Bquad_model_tmin, 
+                           terms = c("scaled_year[all]"), 
+                           type = "fe", 
+                           ci.lvl = .95)
+Bvis_prod_tmin$interval <- "biennial"
+MAvis_prod_tmin <- ggpredict(MAlinear_model_tmin, 
+                            terms = c("scaled_year[all]"), 
+                            type = "fe", 
+                            ci.lvl = .95)
+MAvis_prod_tmin$interval <- "multiannual"
+Dvis_prod_tmin <- ggpredict(Dquad_model_tmin, 
+                           terms = c("scaled_year[all]"), 
+                           type = "fe", 
+                           ci.lvl = .95)
+Dvis_prod_tmin$interval <- "decadal"
+MDvis_prod_tmin <- ggpredict(MDquad_model_tmin, 
+                            terms = c("scaled_year[all]"), 
+                            type = "fe", 
+                            ci.lvl = .95)
+MDvis_prod_tmin$interval <- "multidecadal"
+
+final_avg_tmin_data <- rbind(Bvis_prod_tmin, MAvis_prod_tmin, Dvis_prod_tmin, MDvis_prod_tmin)
+
+# join datasets together for plotting
+final_avg_ppt_data$driver = "ppt"
+final_avg_tmin_data$driver = "tmin"
+
+final_avg_env_data <- rbind(final_avg_ppt_data, final_avg_tmin_data)
+final_avg_env_data <- inner_join(final_avg_env_data, avg_env_sync)
+
+
+
+regional_avg_env <- ggplot() +
+  geom_point(data = avg_env_sync, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  geom_line(data = final_avg_env_data, aes(x = year, y = predicted, group = interval, color = interval),
+            # color = colortreatpred,
+            linewidth = 1) +
+  geom_ribbon(data = final_avg_env_data, aes(
+    x = year,
+    y = predicted,
+    group=interval,
+    fill = interval,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = F) +
+  facet_wrap(~driver) +
+  theme_bw()+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial", "multiannual","decadal","multidecadal"))+
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average synchrony")+
+  xlab("Year")
+
+
+
+
 
 #### plotting avg env sync vs avg tv coh ####
 avg_env_sync <- avg_env_sync %>%

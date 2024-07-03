@@ -1,5 +1,5 @@
 # run updated_cleaning_code script to pull in cleaned data
-source(here::here("updated_cleaning_code.R"))
+source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
 
 # calculate signficance thresholds 
 temp_xx <- psync.by.chance(n)
@@ -164,7 +164,7 @@ avg_sync_standardband$interval <- factor(avg_sync_standardband$interval , levels
 
 
 regional_avg <- ggplot() +
-  geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  #geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
   geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, color = band),
             # color = colortreatpred,
             linewidth = 1) +
@@ -179,7 +179,7 @@ regional_avg <- ggplot() +
     show.legend = F) +
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial", "multiannual","decadal","multidecadal"))+
+  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
@@ -229,6 +229,8 @@ long <- avg_sync_standardband %>%
 long_av <- final_avg_data %>%
   filter(band %in% longbands)
 
+final_avg_data$band <- factor(final_avg_data$band, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'),
+                              labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))
 
 regional_avg <- ggplot() +
   #geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +

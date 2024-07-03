@@ -1,6 +1,6 @@
 
 # source the data from cleaning code
-source(here::here("updated_cleaning_code.R"))
+source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
 
 # perform a moving window to compute the average across a window of years to
 # capture a timescale-specific measure of ppt and tmin
@@ -18,7 +18,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   ppt_3 <- winter_ppt %>% 
     filter(wateryear %in% select_years) %>%
     summarise(window_ppt = mean(winter_ppt)) %>%
@@ -66,7 +66,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   rwi_3 <- avg_plot_growth %>% 
     filter(year %in% select_years) %>%
     summarise(window_rwi = mean(avg_growth)) %>%
@@ -89,7 +89,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   ppt_7 <- winter_ppt %>% 
     filter(wateryear %in% select_years) %>%
     summarise(window_ppt = mean(winter_ppt)) %>%
@@ -113,7 +113,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   tmin_7 <- summer_tmin %>% 
     filter(year %in% select_years) %>%
     summarise(window_tmin = mean(summer_tmin)) %>%
@@ -136,7 +136,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   rwi_7 <- avg_plot_growth %>% 
     filter(year %in% select_years) %>%
     summarise(window_rwi = mean(avg_growth)) %>%
@@ -159,7 +159,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   ppt_15 <- winter_ppt %>% 
     filter(wateryear %in% select_years) %>%
     summarise(window_ppt = mean(winter_ppt)) %>%
@@ -183,7 +183,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   tmin_15 <- summer_tmin %>% 
     filter(year %in% select_years) %>%
     summarise(window_tmin = mean(summer_tmin)) %>%
@@ -206,7 +206,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   rwi_15 <- avg_plot_growth %>% 
     filter(year %in% select_years) %>%
     summarise(window_rwi = mean(avg_growth)) %>%
@@ -229,7 +229,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   ppt_25 <- winter_ppt %>% 
     filter(wateryear %in% select_years) %>%
     summarise(window_ppt = mean(winter_ppt)) %>%
@@ -253,7 +253,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   tmin_25 <- summer_tmin %>% 
     filter(year %in% select_years) %>%
     summarise(window_tmin = mean(summer_tmin)) %>%
@@ -276,7 +276,7 @@ for(i in start_year:end_year){
   select_years <- window_start:window_end
   print(select_years)
   
-  #VR Calcs
+  
   rwi_25 <- avg_plot_growth %>% 
     filter(year %in% select_years) %>%
     summarise(window_rwi = mean(avg_growth)) %>%
@@ -304,6 +304,9 @@ timescale_specific_avg_rwi <- rbind(rwi_window_3, rwi_window_7, rwi_window_15, r
 timescale_specific_avg_env <- inner_join(timescale_specific_avg_ppt, timescale_specific_avg_tmin, 
                                      by = c("window_year", "band", "w_start",
                                             "w_end", "window_lenth"))
+
+saveRDS(timescale_specific_avg_env, "/Users/kaitlynmcknight/Documents/GitHub/Tree-ring-synchrony/Data/ts_env.rds")
+
 timescale_spec_avg_dat <- inner_join(timescale_specific_avg_env, timescale_specific_avg_rwi, 
                                  by = c("window_year", "band", "w_start",
                                         "w_end", "window_lenth"))

@@ -1,17 +1,30 @@
 # run updated_cleaning_code script to pull in cleaned data
-source(here::here("updated_cleaning_code.R"))
+source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
 
 #### Full Time Series ##########################################################
 # plot raw timeseries data for each variable
 ## rwi ##
+colnames(avg_plot_growth_wide) <- 1900:2018
+
+avg_rwi <- avg_plot_growth_wide %>%
+  pivot_longer(1:119, names_to = "year", values_to = "rwi")%>%
+  group_by(year)%>%
+  summarize(trend = mean(rwi))
+
+avg_rwi$plot <- "Trend"
+
+avg_rwi$year <- as.character(avg_rwi$year)
+avg_plot_growth$year <- as.character(avg_plot_growth$year)
 raw_rwi <- ggplot()+
   geom_line(data = avg_plot_growth, aes(x=year, y=avg_growth, group=plot, col=plot))+
+  geom_line(data = avg_rwi, mapping = aes(x=year, y=trend, group = plot, col = plot), color = "black", linewidth = 1.25)+
   theme_bw()+
+  scale_colour_grey(start = 1, end = 0.5)+
   scale_x_discrete(breaks = seq(19,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 10, angle = 45, hjust = 1, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 10, angle = 0, hjust = .5, vjust = 0, face = "plain"),
-        axis.title.x = element_text(color = "black", size = 12, angle = 0, hjust = .5, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 12, angle = 90, hjust = .5, face = "plain"),
+  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
         legend.position = "none",
         legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
@@ -20,7 +33,7 @@ raw_rwi <- ggplot()+
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
   xlab("Year")+
-  ylab("Average RWI")
+  ylab("Average Growth \n(Ring Width Index)")
 
 library(svglite)
 ggsave(file="/Users/kaitlynmcknight/Documents/J/rawgrowth.svg", plot=raw_rwi, width=6, height=5)
@@ -46,8 +59,9 @@ winter_ppt$wateryear <- as.character(winter_ppt$wateryear)
 winter_ppt_trend$wateryear <- as.character(winter_ppt_trend$wateryear)
 raw_ppt <- ggplot()+
   geom_line(data = winter_ppt, mapping = aes(x=wateryear, y=winter_ppt, group=plot, col=plot))+
-  geom_line(data = winter_ppt_trend, mapping = aes(x=wateryear, y=trend), color = "black")+
+  geom_line(data = winter_ppt_trend, mapping = aes(x=wateryear, y=trend, group = plot, col = plot), color = "black", linewidth = 1.25)+
   theme_bw()+
+  scale_colour_grey(start = 1, end = 0.5)+
   scale_x_discrete(breaks = seq(1900,2018,10))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
@@ -61,16 +75,28 @@ raw_ppt <- ggplot()+
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
   xlab("Year")+
-  ylab("OCT - MAY, mm")
+  ylab("Water-Year Precipitation \n(Oct - May, mm)")
 
 png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/newrawppt.png", width = 5, height = 5, units = 'in', res = 600)
 raw_ppt
 dev.off()
 ## tmin ##
+colnames(summer_tmin_wide) <- 1900:2018
+summer_tmin_trend <- summer_tmin_wide %>%
+  pivot_longer(1:119, names_to = "year", values_to = "tmin")%>%
+  group_by(year)%>%
+  summarize(trend = mean(tmin))
+
+summer_tmin_trend$plot <- "Trend"
+
+summer_tmin$year <- as.character(summer_tmin$year)
+summer_tmin_trend$year <- as.character(summer_tmin_trend$year)
 summer_tmin$year <- as.character(summer_tmin$year)
 raw_tmin <- ggplot()+
   geom_line(data = summer_tmin, aes(x=year, y=summer_tmin, group=plot, col=plot))+
+  geom_line(data = summer_tmin_trend, mapping = aes(x=year, y=trend, group = plot, col = plot), color = "black", linewidth = 1.25)+
   theme_bw()+
+  scale_colour_grey(start = 1, end = 0.5)+
   scale_x_discrete(breaks = seq(1900,2018,10))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
@@ -84,7 +110,7 @@ raw_tmin <- ggplot()+
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
   xlab("Year")+
-  ylab("JUN - AUG, C")
+  ylab("Summer Minimum Temperatures \n(Jun - Aug, C)")
 png("/Users/kaitlynmcknight/Documents/Teamtree_finalfigures/newrawtmin.png", width = 5, height = 5, units = 'in', res = 600)
 raw_tmin
 dev.off()
