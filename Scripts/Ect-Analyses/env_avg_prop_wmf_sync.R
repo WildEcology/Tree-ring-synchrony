@@ -337,10 +337,18 @@ final_avg_tmin_data$driver = "tmin"
 final_avg_env_data <- rbind(final_avg_ppt_data, final_avg_tmin_data)
 final_avg_env_data <- inner_join(final_avg_env_data, avg_env_sync)
 
+avg_env_sync$year <- as.character(avg_env_sync$year)
+avg_env_sync$interval <- factor(avg_env_sync$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'),
+                                labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)" ))
+final_avg_env_data$year <- as.character(final_avg_env_data$year)
+final_avg_env_data$interval <- factor(final_avg_env_data$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'),
+                                labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))
+final_avg_env_data$driver <- factor(final_avg_env_data$driver , levels=c('ppt', 'tmin'),
+                                      labels = c("Precipitation", "Temperature"))
 
 
 regional_avg_env <- ggplot() +
-  geom_point(data = avg_env_sync, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  #geom_point(data = avg_env_sync, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
   geom_line(data = final_avg_env_data, aes(x = year, y = predicted, group = interval, color = interval),
             # color = colortreatpred,
             linewidth = 1) +
@@ -356,7 +364,7 @@ regional_avg_env <- ggplot() +
   facet_wrap(~driver) +
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial", "multiannual","decadal","multidecadal"))+
+  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
