@@ -1,6 +1,6 @@
 # run updated_cleaning_code script to pull in cleaned data
-source(here::here("updated_cleaning_code.R"))
-source(here::here("Scripts/coh_tv.R"))
+source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
+source(here::here("Scripts/Current-Scripts/coh_tv.R"))
 
  #### Full Time Series ##########################################################
 # calculate coherence of each predictor across whole time series
@@ -450,11 +450,12 @@ labels <- c(annual = "biennial", interannual = "multiannual", decadal = "decadal
 avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('ppt', 'tmin'))
 ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
-  facet_wrap(~ band, labeller=labeller(band = labels))+
+  facet_wrap(~ band, labeller=labeller(band = c("biennial" = "Biennial", "multiannual" = "Multiannual", "decadal" = "Decadal", "multidecadal"= "Multidecadal")))+
   theme_bw()+
-  scale_color_manual(values = c("blue","red"))+
+  scale_color_manual(values = c("#377EB8", "#E41A1C"), labels = c("Winter Precipitation", "Summer Temperatures"))+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+  theme(text = element_text(size = 16),
+    axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
         axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),

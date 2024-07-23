@@ -345,10 +345,11 @@ final_avg_env_data$interval <- factor(final_avg_env_data$interval , levels=c('bi
                                 labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))
 final_avg_env_data$driver <- factor(final_avg_env_data$driver , levels=c('ppt', 'tmin'),
                                       labels = c("Precipitation", "Temperature"))
-
+avg_env_sync$driver <- factor(avg_env_sync$driver , levels=c('ppt', 'tmin'),
+                                    labels = c("Precipitation", "Temperature"))
 
 regional_avg_env <- ggplot() +
-  #geom_point(data = avg_env_sync, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
+  geom_point(data = avg_env_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
   geom_line(data = final_avg_env_data, aes(x = year, y = predicted, group = interval, color = interval),
             # color = colortreatpred,
             linewidth = 1) +
@@ -364,8 +365,10 @@ regional_avg_env <- ggplot() +
   facet_wrap(~driver) +
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))+
-  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  scale_fill_brewer(palette = "RdYlBu", direction = -1)+
+  theme(text = element_text(size = 16),
+        axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
         axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),

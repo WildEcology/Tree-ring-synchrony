@@ -158,15 +158,14 @@ final_avg_data <- rbind(avis_prod, ivis_prod, dvis_prod, mvis_prod)
 
 final_avg_data <- full_join(avg_sync_standardband_tojoin, final_avg_data, by="x")
 final_avg_data$year <- as.character(final_avg_data$year)
+final_avg_data$band <- factor(final_avg_data$band, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
-avg_sync_standardband$interval <- factor(avg_sync_standardband$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
-
+avg_sync_standardband$band <- factor(avg_sync_standardband$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 
 
 regional_avg <- ggplot() +
-  #geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= interval), alpha = 0.1) +
-  geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, color = band),
-            # color = colortreatpred,
+  geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= band), alpha = 0.1) +
+  geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, col = band),
             linewidth = 1) +
   geom_ribbon(data = final_avg_data, aes(
     x = year,
@@ -177,20 +176,27 @@ regional_avg <- ggplot() +
     ymax = conf.high),
     alpha = 0.2,
     show.legend = F) +
+  #facet_grid(~factor(band, levels = c("biennial", "multiannual", "decadal", "multidecadal")), labeller = labeller(band = c("Biennial" = "biennial", 
+                                                 #"Multiannual" = "multiannual", 
+                                                 #"Decadal" = "decadal", 
+                                                 #"Multidecadal" = "multidecadal")))+
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
-  scale_color_brewer(palette="Spectral", type = "seq", labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))+
-  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  scale_fill_brewer(palette = "RdYlBu", direction = -1)+
+  theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
         axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
         legend.title = element_blank(),
+        #legend.text = element_blank(),
+        #legend.position = "none",
         legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("Average synchrony")+
+  ylab("Average growth synchrony")+
   xlab("Year")
 
 

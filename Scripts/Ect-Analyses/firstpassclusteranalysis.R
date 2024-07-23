@@ -1,4 +1,4 @@
-source(here::here("scripts/cleaning_code.R"))
+source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
 plot_names_normalized <- read_csv("Data/plot_names_normalized.csv")
 
 sm <- synmat(avg_plot_growth_mx, times, method = "pearson")
@@ -13,6 +13,7 @@ matching_plots <- left_join(avg_plot_growth_wide_with_plot, plot_info) %>%
   select(-plot_label, -plot_id_climate, -plot_id_genetics, -plot_id_tree.ring, -plot_label_2, -plot_number)
 coords<-data.frame(X=matching_plots$lat, Y=matching_plots$long)
 
+times <- 
 clusters <- clust(dat=avg_plot_growth_mx, times, coords=coords, method="pearson")
 get_clusters(clusters)
 plotmap(clusters)
