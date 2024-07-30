@@ -227,3 +227,122 @@ ggplot()+
   scale_color_manual(values = c("red", "blue"))
 
 # decadal and multidecadal already only have two clusters 
+
+
+
+#### REPEAT WITH ENV DATA ####
+times <- 1900:2018
+b_clust_ppt <- clust(dat=winter_ppt_mx, times, coords=coords, method="ReXWT", tsrange = c(2,3))
+ma_clust_ppt <- clust(dat=winter_ppt_mx, times, coords=coords, method="ReXWT", tsrange = c(3,10))
+d_clust_ppt <- clust(dat=winter_ppt_mx, times, coords=coords, method="ReXWT", tsrange = c(10,20))
+md_clust_ppt <- clust(dat=winter_ppt_mx, times, coords=coords, method="ReXWT", tsrange = c(20,30))
+
+# how many clusters per band
+get_clusters(b_clust_ppt) # 1 cluster
+get_clusters(ma_clust_ppt) # 1 cluster
+get_clusters(d_clust_ppt) # 1 cluster
+get_clusters(md_clust_ppt) # 2 clusters
+
+sf_df_md_ppt <- as.data.frame(cbind(md_clust_ppt[["clusters"]][[2]], md_clust_ppt[["modres"]][[2]][["nodeQ"]], coords)) %>%
+  rename("cluster" = `md_clust_ppt[["clusters"]][[2]]`) %>%
+  rename("weight" = `md_clust_ppt[["modres"]][[2]][["nodeQ"]]`)
+
+geog_md_ppt <- st_as_sf(sf_df_md_ppt, coords = c("Y","X"))
+
+geog_md_ppt$cluster <- as.factor(geog_md_ppt$cluster)
+
+st_crs(geog_md_ppt) <- pj
+geog_md_ppt <- st_transform(geog_md_ppt, crs)
+
+ggplot()+
+  geom_sf(data = boundary, fill=NA)+
+  geom_sf(data = geog_md_ppt, aes(col=cluster, size = weight))+
+  theme_bw()+
+  scale_color_manual(values = c("red", "blue"))
+
+# TMIN
+times <- 1900:2018
+b_clust_tmin <- clust(dat=summer_tmin_mx, times, coords=coords, method="ReXWT", tsrange = c(2,3))
+ma_clust_tmin <- clust(dat=summer_tmin_mx, times, coords=coords, method="ReXWT", tsrange = c(3,10))
+d_clust_tmin <- clust(dat=summer_tmin_mx, times, coords=coords, method="ReXWT", tsrange = c(10,20))
+md_clust_tmin <- clust(dat=summer_tmin_mx, times, coords=coords, method="ReXWT", tsrange = c(20,30))
+
+# how many clusters per band
+get_clusters(b_clust_tmin) # 2 cluster
+get_clusters(ma_clust_tmin) # 2 cluster
+get_clusters(d_clust_tmin) # 2 cluster
+get_clusters(md_clust_tmin) # 2 clusters
+
+
+# biennial
+sf_df_b_tmin <- as.data.frame(cbind(b_clust_tmin[["clusters"]][[2]], b_clust_tmin[["modres"]][[2]][["nodeQ"]], coords)) %>%
+  rename("cluster" = `b_clust_tmin[["clusters"]][[2]]`) %>%
+  rename("weight" = `b_clust_tmin[["modres"]][[2]][["nodeQ"]]`)
+
+geog_b_tmin <- st_as_sf(sf_df_b_tmin, coords = c("Y","X"))
+
+geog_b_tmin$cluster <- as.factor(geog_b_tmin$cluster)
+
+st_crs(geog_b_tmin) <- pj
+geog_b_tmin <- st_transform(geog_b_tmin, crs)
+
+ggplot()+
+  geom_sf(data = boundary, fill=NA)+
+  geom_sf(data = geog_b_tmin, aes(col=cluster, size = weight))+
+  theme_bw()+
+  scale_color_manual(values = c("red", "blue"))
+
+# multiannual
+sf_df_ma_tmin <- as.data.frame(cbind(ma_clust_tmin[["clusters"]][[2]], ma_clust_tmin[["modres"]][[2]][["nodeQ"]], coords)) %>%
+  rename("cluster" = `ma_clust_tmin[["clusters"]][[2]]`) %>%
+  rename("weight" = `ma_clust_tmin[["modres"]][[2]][["nodeQ"]]`)
+
+geog_ma_tmin <- st_as_sf(sf_df_ma_tmin, coords = c("Y","X"))
+
+geog_ma_tmin$cluster <- as.factor(geog_ma_tmin$cluster)
+
+st_crs(geog_ma_tmin) <- pj
+geog_ma_tmin <- st_transform(geog_ma_tmin, crs)
+
+ggplot()+
+  geom_sf(data = boundary, fill=NA)+
+  geom_sf(data = geog_ma_tmin, aes(col=cluster, size = weight))+
+  theme_bw()+
+  scale_color_manual(values = c("red", "blue"))
+
+# decadal
+sf_df_d_tmin <- as.data.frame(cbind(d_clust_tmin[["clusters"]][[2]], d_clust_tmin[["modres"]][[2]][["nodeQ"]], coords)) %>%
+  rename("cluster" = `d_clust_tmin[["clusters"]][[2]]`) %>%
+  rename("weight" = `d_clust_tmin[["modres"]][[2]][["nodeQ"]]`)
+
+geog_d_tmin <- st_as_sf(sf_df_d_tmin, coords = c("Y","X"))
+
+geog_d_tmin$cluster <- as.factor(geog_d_tmin$cluster)
+
+st_crs(geog_d_tmin) <- pj
+geog_d_tmin <- st_transform(geog_d_tmin, crs)
+
+ggplot()+
+  geom_sf(data = boundary, fill=NA)+
+  geom_sf(data = geog_d_tmin, aes(col=cluster, size = weight))+
+  theme_bw()+
+  scale_color_manual(values = c("red", "blue"))
+
+
+# multidecadal
+sf_df_md_tmin <- as.data.frame(cbind(md_clust_tmin[["clusters"]][[2]], md_clust_tmin[["modres"]][[2]][["nodeQ"]], coords)) %>%
+  rename("cluster" = `md_clust_tmin[["clusters"]][[2]]`) %>%
+  rename("weight" = `md_clust_tmin[["modres"]][[2]][["nodeQ"]]`)
+
+geog_md_tmin <- st_as_sf(sf_df_md_tmin, coords = c("Y","X"))
+
+geog_md_tmin$cluster <- as.factor(geog_md_tmin$cluster)
+
+st_crs(geog_md_tmin) <- pj
+geog_md_tmin <- st_transform(geog_md_tmin, crs)
+
+ggplot()+
+  geom_sf(data = boundary, fill=NA)+
+  geom_sf(data = geog_md_tmin, aes(col=cluster, size = weight))+
+  theme_bw()+
+  scale_color_manual(values = c("red", "blue"))

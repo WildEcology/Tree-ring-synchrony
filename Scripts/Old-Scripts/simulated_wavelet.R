@@ -49,9 +49,10 @@ dat_df$year <- as.numeric(dat_df$year)
 dat_df$plot <- as.character(dat_df$plot)
 
 plot810 <- dat_df %>%
-  filter(plot == 1 | plot == 6)
+  filter(plot == 9 | plot == 10)
 
 fanmrfox <- c("#46ACC8", "#E58601", "#B40F20")
+pale <- c("goldenrod", "lightgrey")
 
 ggplot(plot810, aes(x=year, y=rwi, group = plot, col = plot))+
   geom_line(size = 1)+
@@ -63,10 +64,10 @@ ggplot(plot810, aes(x=year, y=rwi, group = plot, col = plot))+
         legend.text = element_text(color = "grey20", size = 28),
         legend.title = element_text(color = "grey20", size = 32))+
   #facet_grid(plot~.)
-  scale_color_manual(values = fanmrfox,
+  scale_color_manual(values = pale,
                      name = "Population",
                      labels = c("North", "South"))+
-  #scale_x_continuous(limits = c(1965,1990))+
+  scale_x_continuous(limits = c(1965,1990))+
   xlab("Year")+
   ylab("Annual Growth")
 
@@ -95,7 +96,7 @@ plot10 <- dat_df %>%
 
 
 ggplot(plot10, aes(x=year, y=rwi))+
-  geom_line(size = 1, col = "#E58601")+
+  geom_line, col = "#E58601")+
   theme_classic()+
   theme(axis.text.x = element_text(color = "grey20", size = 28, angle = 45, hjust = .5, vjust = .5, face = "plain"),
         axis.text.y = element_blank(),  
