@@ -151,7 +151,7 @@ ggplot()+
   scale_color_manual(values = c("red", "blue"))
 
 # create cluster dataframes for each timescale band with plot classifications
-plot_dem <- read_csv("Data/plot_demdat.csv")
+plot_dem <- read.csv("Data/plot_demdat.csv")
 plot_dem <- plot_dem %>% rename(plot = "plot_id_needle") %>% rename(X = "lat") %>% rename(Y = "long") %>% select(-plot_number)
 plot_coords <- plot_info %>% select(plot, lat, long)
 plot_coords <- plot_coords %>% rename(X = "lat") %>% rename(Y = "long")
@@ -161,7 +161,7 @@ plot_classification <- plot_classification %>% select(pck, tmn, plot_type, plot2
 
 # biennial
 b_clust_coords <- as.data.frame(b_clust[["coords"]])
-b_clust_coords$cluster <- b_clust[["clusters"]][[3]]
+b_clust_coords$cluster <- b_clust[["clusters"]][[2]]
 b_clust_coords <- left_join(b_clust_coords, plot_coords)%>%
   left_join(plot_classification) %>%
   left_join(plot_dem)
@@ -169,7 +169,7 @@ b_clust_coords <- left_join(b_clust_coords, plot_coords)%>%
 
 # multiannual
 ma_clust_coords <- as.data.frame(ma_clust[["coords"]])
-ma_clust_coords$cluster <- ma_clust[["clusters"]][[4]]
+ma_clust_coords$cluster <- ma_clust[["clusters"]][[2]]
 ma_clust_coords <- left_join(ma_clust_coords, plot_coords)%>%
   left_join(plot_classification)%>%
   left_join(plot_dem)
@@ -189,6 +189,9 @@ md_clust_coords <- left_join(md_clust_coords, plot_coords)%>%
   left_join(plot_classification)%>%
   left_join(plot_dem)
 
+
+ggplot(data = md_clust_coords, aes(x=tmn, y = cluster, col=elevation_m))+
+  geom_point()
 
 # plot clusters on the map using just two (minimum number of clusters produced across bands)
 # biennial
@@ -231,6 +234,7 @@ ggplot()+
 
 
 #### REPEAT WITH ENV DATA ####
+# PPT
 times <- 1900:2018
 b_clust_ppt <- clust(dat=winter_ppt_mx, times, coords=coords, method="ReXWT", tsrange = c(2,3))
 ma_clust_ppt <- clust(dat=winter_ppt_mx, times, coords=coords, method="ReXWT", tsrange = c(3,10))
@@ -243,6 +247,7 @@ get_clusters(ma_clust_ppt) # 1 cluster
 get_clusters(d_clust_ppt) # 1 cluster
 get_clusters(md_clust_ppt) # 2 clusters
 
+# only multidecadal has two clusters
 sf_df_md_ppt <- as.data.frame(cbind(md_clust_ppt[["clusters"]][[2]], md_clust_ppt[["modres"]][[2]][["nodeQ"]], coords)) %>%
   rename("cluster" = `md_clust_ppt[["clusters"]][[2]]`) %>%
   rename("weight" = `md_clust_ppt[["modres"]][[2]][["nodeQ"]]`)
@@ -341,8 +346,217 @@ geog_md_tmin$cluster <- as.factor(geog_md_tmin$cluster)
 st_crs(geog_md_tmin) <- pj
 geog_md_tmin <- st_transform(geog_md_tmin, crs)
 
+
 ggplot()+
   geom_sf(data = boundary, fill=NA)+
   geom_sf(data = geog_md_tmin, aes(col=cluster, size = weight))+
   theme_bw()+
   scale_color_manual(values = c("red", "blue"))
+
+#### further investigation of environmental clustering ####
+
+ggplot(data = md_clust_coords, aes(x=tmn, y = cluster, col=elevation_m))+geom_point()
+
+avg_tmin <- summer_tmin %>% group_by(plot) %>% summarise(avg_tmin_per_plot = mean(summer_tmin))
+md_clust_coords <- left_join(md_clust_coords, avg_tmin)
+md_clust_coords$quantiles <- as.factor(md_clust_coords$quantiles)
+md_clust_coords$cluster <- as.factor(md_clust_coords$cluster)
+ggplot(data = md_clust_coords, aes(x=cluster, y = avg_tmin_per_plot, col=elevation_m))+
+  geom_point()
+
+quantile(avg_tmin$avg_tmin_per_plot, probs = c(0.33, 0.66, 1.0))
+avg_tmin <- avg_tmin %>% mutate(quantiles = case_when(avg_tmin_per_plot <= 3.201447 ~ 1,
+                                                      avg_tmin_per_plot >= 3.201447 & avg_tmin_per_plot < 4.299613 ~ 2,
+                                                      avg_tmin_per_plot >= 4.299613 & avg_tmin_per_plot < 7.559042 ~ 3,
+                                                      plot == "RC" ~ 3))
+
+
+
+
+
+
+ma_clust_coords <- ma_clust_coords %>%
+  mutate(region = case_when(X > 38.5 ~ "N",
+                            X < 38.5 & X > 37.5 ~ "M",
+                            X < 37.5 ~ "S"))
+ma_clust_coords <- left_join(ma_clust_coords, avg_tmin)
+ma_clust_coords$cluster <- factor(ma_clust_coords$cluster)
+ma_clust_coords$quantiles <- factor(ma_clust_coords$quantiles)
+ma_clust_coords$region <- factor(ma_clust_coords$region, levels = c("N", "M", "S"))
+
+ggplot(data = ma_clust_coords, aes(x=elevation_m, y = cluster))+
+  geom_point()+
+  facet_wrap(~region)+
+  ggtitle("multiannual")
+
+ggplot(data = ma_clust_coords, aes(x=avg_tmin_per_plot, y = cluster))+
+  geom_point()+
+  facet_wrap(~region)+
+  ggtitle("multiannual")
+
+
+d_clust_coords <- d_clust_coords %>%
+  mutate(region = case_when(X > 38.5 ~ "N",
+                            X < 38.5 & X > 37.5 ~ "M",
+                            X < 37.5 ~ "S"))
+d_clust_coords <- left_join(d_clust_coords, avg_tmin)
+
+d_clust_coords$cluster <- factor(d_clust_coords$cluster)
+d_clust_coords$region <- factor(d_clust_coords$region, levels = c("N", "M", "S"))
+
+ggplot(data = d_clust_coords, aes(x=avg_tmin_per_plot, y = cluster))+
+  geom_point()+
+  facet_wrap(~region)+
+  ggtitle("decadal")
+
+ggplot(data = d_clust_coords, aes(x=avg_tmin_per_plot, y = cluster))+
+  geom_point()+
+  facet_wrap(~region)+
+  ggtitle("decadal")
+
+
+b_clust_coords <- b_clust_coords %>%
+  mutate(region = case_when(X > 38.5 ~ "N",
+                            X < 38.5 & X > 37.5 ~ "M",
+                            X < 37.5 ~ "S"))
+b_clust_coords <- left_join(b_clust_coords, avg_tmin)
+b_clust_coords$cluster <- factor(b_clust_coords$cluster)
+b_clust_coords$region <- factor(b_clust_coords$region, levels = c("N", "M", "S"))
+ggplot(data = b_clust_coords, aes(x=avg_tmin_per_plot, y = cluster))+
+  geom_point()+
+  facet_wrap(~region)+
+  ggtitle("biennial")
+
+md_clust_coords <- md_clust_coords %>%
+  mutate(region = case_when(X > 38.5 ~ "N",
+                            X < 38.5 & X > 37.5 ~ "M",
+                            X < 37.5 ~ "S"))
+md_clust_coords <- left_join(md_clust_coords, avg_tmin)
+md_clust_coords$cluster <- factor(md_clust_coords$cluster)
+md_clust_coords$region <- factor(md_clust_coords$region, levels = c("N", "M", "S"))
+ggplot(data = md_clust_coords, aes(x=avg_tmin_per_plot, y = cluster))+
+  geom_point()+
+  facet_wrap(~region)+
+  ggtitle("multidecadal")
+
+
+ma_cluster_1_N <- ma_clust_coords %>%
+  filter(cluster == 1, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plots
+ma_cluster_1_M <- ma_clust_coords %>%
+  filter(cluster == 1, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 3 plots
+ma_cluster_1_S <- ma_clust_coords %>%
+  filter(cluster == 1, region == "S") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m)# 7 plots
+
+ma_cluster_2_N <- ma_clust_coords %>%
+  filter(cluster == 2, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plots
+ma_cluster_2_M <- ma_clust_coords %>%
+  filter(cluster == 2, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 4 plots
+ma_cluster_2_S <- ma_clust_coords %>%
+  filter(cluster == 2, region == "S")%>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plots
+
+t.test(ma_cluster_1_N, ma_cluster_2_N, var.equal = TRUE) # sig, p-value = 0.00639
+t.test(ma_cluster_1_M, ma_cluster_2_M, var.equal = TRUE) # non-sig, p-value = 0.05707
+t.test(ma_cluster_1_S, ma_cluster_2_S, var.equal = TRUE) # non-sig, p-value = 0.6438
+
+
+d_cluster_1_N <- d_clust_coords %>%
+  filter(cluster == 1, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plots
+d_cluster_1_M <- d_clust_coords %>%
+  filter(cluster == 1, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 3 plots
+d_cluster_1_S <- d_clust_coords %>%
+  filter(cluster == 1, region == "S") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m)# 7 plots
+
+d_cluster_2_N <- d_clust_coords %>%
+  filter(cluster == 2, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plots
+d_cluster_2_M <- d_clust_coords %>%
+  filter(cluster == 2, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 4 plots
+d_cluster_2_S <- d_clust_coords %>%
+  filter(cluster == 2, region == "S")%>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plots
+
+t.test(d_cluster_1_N, d_cluster_2_N, var.equal = TRUE) # sig, p-value = 0.005718
+t.test(d_cluster_1_M, d_cluster_2_M, var.equal = TRUE) # non-sig, p-value = 0.3188
+t.test(d_cluster_1_S, d_cluster_2_S, var.equal = TRUE) # non-sig, p-value = 0.1919
+
+b_cluster_1_N <- b_clust_coords %>%
+  filter(cluster == 1, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 3 plots
+b_cluster_1_M <- b_clust_coords %>%
+  filter(cluster == 1, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 6 plots
+b_cluster_1_S <- b_clust_coords %>%
+  filter(cluster == 1, region == "S") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m)# 9 plots
+
+b_cluster_2_N <- b_clust_coords %>%
+  filter(cluster == 2, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 1 plot
+b_cluster_2_M <- b_clust_coords %>%
+  filter(cluster == 2, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 1 plot
+b_cluster_2_S <- b_clust_coords %>%
+  filter(cluster == 2, region == "S")%>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 0 plots
+
+t.test(b_cluster_1_N, b_cluster_2_N, var.equal = TRUE) # non-sig, p-value = 0.3698
+t.test(b_cluster_1_M, b_cluster_2_M, var.equal = TRUE) # non-sig, p-value = 0.747
+t.test(b_cluster_1_S, b_cluster_2_S, var.equal = TRUE) # no cluster 2 plots in S region for biennial band
+
+md_cluster_1_N <- md_clust_coords %>%
+  filter(cluster == 1, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 1 plot
+md_cluster_1_M <- md_clust_coords %>%
+  filter(cluster == 1, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 5 plots
+md_cluster_1_S <- md_clust_coords %>%
+  filter(cluster == 1, region == "S") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m)# 4 plots
+
+md_cluster_2_N <- md_clust_coords %>%
+  filter(cluster == 2, region == "N") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 3 plot
+md_cluster_2_M <- md_clust_coords %>%
+  filter(cluster == 2, region == "M") %>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 2 plot
+md_cluster_2_S <- md_clust_coords %>%
+  filter(cluster == 2, region == "S")%>% 
+  select(plot, elevation_m) %>%
+  pivot_wider(names_from = plot, values_from = elevation_m) # 5 plots
+
+t.test(md_cluster_1_N, md_cluster_2_N, var.equal = TRUE) # non-sig, 0.3698
+t.test(md_cluster_1_M, md_cluster_2_M, var.equal = TRUE) # non-sig, p-value = 0.9358
+t.test(md_cluster_1_S, md_cluster_2_S, var.equal = TRUE) # non-sig, p-value = 0.117
