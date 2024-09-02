@@ -235,3 +235,4 @@ ts_env_data <- full_join(ts_tmin, ts_ppt) %>%
   select(year,band,average,driver,quantile)
 
 saveRDS(ts_env_data, "/Users/kaitlynmcknight/Documents/GitHub/Tree-ring-synchrony/Data/ts_env_data.rds")
+

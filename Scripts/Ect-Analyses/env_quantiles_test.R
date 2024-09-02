@@ -337,14 +337,17 @@ avg_tmin_sync_timescale_ppt <- na.omit(avg_tmin_sync_timescale_ppt)
 
 avg_tmin_sync_timescale_ppt$band <- factor(avg_tmin_sync_timescale_ppt$band, levels = c("biennial", "multiannual", "decadal", "multidecadal" ))
 
-avg_tmin_sync_ppt_quant <- ggplot(data = avg_tmin_sync_timescale_ppt, aes(x = quantile, y = mean.tmin.sync, col = band)) +
+avg_tmin_sync_ppt_quant <- ggplot(data = avg_ppt_sync_timescale_tmin, aes(x = quantile, y = mean.ppt.sync, col = band)) +
   geom_point()+
   geom_line()+
-  geom_errorbar(aes(ymin = lower.ci.tmin.sync, ymax = upper.ci.tmin.sync, x = quantile, y=mean.tmin.sync, width = 0.2), position = position_dodge(width = 0.8)) +
+  geom_errorbar(aes(ymin = lower.ci.ppt.sync, ymax = upper.ci.ppt.sync, x = quantile, y=mean.ppt.sync, width = 0.2)) +
   theme_bw()+
+  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
-  ylab("Avg TMIN Sync")+
-  theme(axis.text.x = element_blank(),
+  ylab("Average Precipitation Synchrony")+
+  theme(axis.text.x = element_text(color = "grey20", size = 12,
+                                   angle = 0, hjust = .5,
+                                   face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 12,
                                    angle = 0, hjust = .5,
                                    face = "plain"),

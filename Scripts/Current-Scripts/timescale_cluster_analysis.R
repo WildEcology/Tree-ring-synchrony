@@ -67,6 +67,7 @@ plotmag(get_wmfs(ma_wmf)[[4]][[4]])
 d_wmf <- addwmfs(d_clust)
 plotmag(get_wmfs(d_wmf)[[2]][[1]])
 plotmag(get_wmfs(d_wmf)[[2]][[2]])
+
 # multdecadal
 md_wmf <- addwmfs(md_clust)
 plotmag(get_wmfs(md_wmf)[[2]][[1]])
@@ -560,3 +561,4 @@ md_cluster_2_S <- md_clust_coords %>%
 t.test(md_cluster_1_N, md_cluster_2_N, var.equal = TRUE) # non-sig, 0.3698
 t.test(md_cluster_1_M, md_cluster_2_M, var.equal = TRUE) # non-sig, p-value = 0.9358
 t.test(md_cluster_1_S, md_cluster_2_S, var.equal = TRUE) # non-sig, p-value = 0.117
+
