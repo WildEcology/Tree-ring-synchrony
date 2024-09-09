@@ -20,7 +20,7 @@ raw_rwi <- ggplot()+
   geom_line(data = avg_rwi, mapping = aes(x=year, y=trend, group = plot, col = plot), color = "black", linewidth = 1.25)+
   theme_bw()+
   scale_colour_grey(start = 1, end = 0.5)+
-  scale_x_discrete(breaks = seq(19,2018,10))+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
   theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
         axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),

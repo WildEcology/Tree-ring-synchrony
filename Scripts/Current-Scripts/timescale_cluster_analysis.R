@@ -11,12 +11,17 @@ matching_plots <- left_join(avg_plot_growth_wide_with_plot, plot_info) %>%
   select(-plot_label, -plot_id_climate, -plot_id_genetics, -plot_id_tree.ring, -plot_label_2, -plot_number)
 coords<-data.frame(X=matching_plots$lat, Y=matching_plots$long)
 
+matching_plots <- matching_plots[2:120]
+colnames(matching_plots) <- NULL
+matching_plots_mx <- as.matrix(matching_plots)
+times <- 1900:2018
+matching_plots_mx <- cleandat(matching_plots_mx, times, clev = 5)$cdat
 # cluster analysis for each timescale band
 times <- 1900:2018
-b_clust <- clust(dat=avg_plot_growth_mx, times, coords=coords, method="ReXWT", tsrange = c(2,3))
-ma_clust <- clust(dat=avg_plot_growth_mx, times, coords=coords, method="ReXWT", tsrange = c(3,10))
-d_clust <- clust(dat=avg_plot_growth_mx, times, coords=coords, method="ReXWT", tsrange = c(10,20))
-md_clust <- clust(dat=avg_plot_growth_mx, times, coords=coords, method="ReXWT", tsrange = c(20,30))
+b_clust <- clust(dat=matching_plots_mx, times, coords=coords, method="ReXWT", tsrange = c(2,3))
+ma_clust <- clust(dat=matching_plots_mx, times, coords=coords, method="ReXWT", tsrange = c(3,10))
+d_clust <- clust(dat=matching_plots_mx, times, coords=coords, method="ReXWT", tsrange = c(10,20))
+md_clust <- clust(dat=matching_plots_mx, times, coords=coords, method="ReXWT", tsrange = c(20,30))
 
 # how many clusters per band
 get_clusters(b_clust) # 3 clusters
@@ -98,9 +103,9 @@ ggplot()+
   scale_color_manual(values = c("red", "blue", "green"))
 
 # multiannual
-sf_df_ma <- as.data.frame(cbind(ma_clust[["clusters"]][[4]], ma_clust[["modres"]][[4]][["nodeQ"]], coords)) %>%
-  rename("cluster" = `ma_clust[["clusters"]][[4]]`) %>%
-  rename("weight" = `ma_clust[["modres"]][[4]][["nodeQ"]]`)
+sf_df_ma <- as.data.frame(cbind(ma_clust[["clusters"]][[3]], ma_clust[["modres"]][[3]][["nodeQ"]], coords)) %>%
+  rename("cluster" = `ma_clust[["clusters"]][[3]]`) %>%
+  rename("weight" = `ma_clust[["modres"]][[3]][["nodeQ"]]`)
 
 geog_ma <- st_as_sf(sf_df_ma, coords = c("Y","X"))
 
