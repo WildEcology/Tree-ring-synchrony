@@ -196,7 +196,7 @@ regional_avg <- ggplot() +
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("Average growth synchrony")+
+  ylab("Average Growth Synchrony")+
   xlab("Year")
 
 

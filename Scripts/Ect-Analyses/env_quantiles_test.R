@@ -190,18 +190,27 @@ avg_ppt_sync_tmin_quant <- ggplot(data = avg_ppt_sync_timescale_tmin, aes(x = qu
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.ppt.sync, ymax = upper.ci.ppt.sync, x = quantile, y=mean.ppt.sync, width = 0.2)) +
   theme_bw()+
-  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
-  #facet_wrap(~band)+
+  scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   ylab("Average Precipitation Synchrony")+
   xlab("Temperature Quartiles")+
   theme(axis.text.x = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
+                                   angle = 0, hjust = 1.0, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, 
+                                   angle = 0, hjust = .5, 
                                    face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
-                                   face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14,
+                                    angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, 
+                                    angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_text(color = "grey20", size = 12,
+                                    angle = 0, hjust = 0, face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = 0, face = "plain"))
+                                   angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) + labs(tag = "B")
+
 
 
 
@@ -396,18 +405,27 @@ avg_tmin_sync_ppt_quant <- ggplot(data = avg_tmin_sync_timescale_ppt, aes(x = qu
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.tmin.sync, ymax = upper.ci.tmin.sync, x = quantile, y=mean.tmin.sync, width = 0.2)) +
   theme_bw()+
-  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Temperature Synchrony")+
   xlab("Precipitation Quartiles")+
   theme(axis.text.x = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
+                                   angle = 0, hjust = 1.0, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, 
+                                   angle = 0, hjust = .5, 
                                    face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
-                                   face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14,
+                                    angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, 
+                                    angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_text(color = "grey20", size = 12,
+                                    angle = 0, hjust = 0, face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = 0, face = "plain"))
+                                   angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) + labs(tag = "D")
 
 
 
@@ -438,18 +456,27 @@ avg_rwi_sync_ppt_quant <- ggplot(data = avg_rwi_sync_timescale_ppt, aes(x = quan
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.rwi.sync, ymax = upper.ci.rwi.sync, x = quantile, y=mean.rwi.sync, width = 0.2)) +
   theme_bw()+
-  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Growth Synchrony")+
   xlab("Precipitation Quartiles")+
   theme(axis.text.x = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
+                                   angle = 0, hjust = 1.0, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, 
+                                   angle = 0, hjust = .5, 
                                    face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
-                                   face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14,
+                                    angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, 
+                                    angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_text(color = "grey20", size = 12,
+                                    angle = 0, hjust = 0, face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = 0, face = "plain"))
+                                   angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) + labs(tag = "C")
 
 
 
@@ -474,15 +501,25 @@ avg_rwi_sync_tmin_quant <- ggplot(data = avg_rwi_sync_timescale_tmin, aes(x = qu
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.rwi.sync, ymax = upper.ci.rwi.sync, x = quantile, y=mean.rwi.sync, width = 0.2)) +
   theme_bw()+
-  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Growth Synchrony")+
   xlab("Temperature Quartiles")+
   theme(axis.text.x = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
+                                   angle = 0, hjust = 1.0, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, 
+                                   angle = 0, hjust = .5, 
                                    face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = .5,
-                                   face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14,
+                                    angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, 
+                                    angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_text(color = "grey20", size = 12,
+                                    angle = 0, hjust = 0, face = "plain"),
         legend.text = element_text(color = "grey20", size = 12,
-                                   angle = 0, hjust = 0, face = "plain"))
+                                   angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) + labs(tag = "A")
+
