@@ -76,7 +76,7 @@ avg_plot_growth_df <- avg_plot_growth_df %>%
 avg_plot_growth_df$plot <- avg_plot_growth$plot
 
 # produce wpmf & wmf for growth data
-res_growth_wpmf<-wpmf(avg_plot_growth_mx,times,sigmethod="quick")
+res_growth_wpmf<-wpmf(avg_plot_growth_mx,times,sigmethod="none")
 res_growth_wmf<-wmf(avg_plot_growth_mx,times)
 
 #### ENVIRONMENTAL DATA ########################################################
@@ -226,6 +226,8 @@ avg_vpdmax_df$plot <- avg_vpdmax$plot
 # produce wpmf for growth data
 res_vpdmax_wpmf<-wpmf(avg_vpdmax_mx,times,sigmethod="none")
 res_vpdmax_wmf<-wmf(avg_vpdmax_mx,times)
+
+
 
 #### TWO TIME PERIODS ##########################################################
 # split and clean all data into two time periods 

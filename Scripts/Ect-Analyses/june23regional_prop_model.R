@@ -112,7 +112,7 @@ wav<-Mod(get_values(res_growth_wpmf))
 times<-get_times(res_growth_wpmf)
 timescales<-get_timescales(res_growth_wpmf)
 
-plotmag(res_growth_wpmf)
+plotmag(res_growth_wmf)
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=upper,drawlabels=F,lwd=2,
                   xaxs="i",xaxt="n",xaxp=c(0,1,5),las=1,frame=F,lty=1, add=TRUE)
 graphics::contour(x=times,y=log2(timescales),z=wav,levels=lower,drawlabels=F,lwd=2,

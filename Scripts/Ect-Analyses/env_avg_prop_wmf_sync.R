@@ -348,12 +348,19 @@ final_avg_env_data$driver <- factor(final_avg_env_data$driver , levels=c('ppt', 
 avg_env_sync$driver <- factor(avg_env_sync$driver , levels=c('ppt', 'tmin'),
                                     labels = c("Precipitation", "Temperature"))
 
+
+final_avg_ppt_sync<- final_avg_env_data %>%
+  filter(driver == "Precipitation")
+
+final_avg_tmin_sync <- final_avg_env_data %>%
+  filter(driver == "Temperature")
+
 regional_avg_env <- ggplot() +
-  geom_point(data = avg_env_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
-  geom_line(data = final_avg_env_data, aes(x = year, y = predicted, group = interval, color = interval),
+  geom_point(data = final_avg_tmin_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
+  geom_line(data = final_avg_tmin_sync, aes(x = year, y = predicted, group = interval, color = interval),
             # color = colortreatpred,
             linewidth = 1) +
-  geom_ribbon(data = final_avg_env_data, aes(
+  geom_ribbon(data = final_avg_tmin_sync, aes(
     x = year,
     y = predicted,
     group=interval,
@@ -362,7 +369,7 @@ regional_avg_env <- ggplot() +
     ymax = conf.high),
     alpha = 0.2,
     show.legend = F) +
-  facet_wrap(~driver) +
+  #facet_wrap(~driver) +
   theme_bw()+
   scale_x_discrete(breaks = seq(1900,2018,10))+
   scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
@@ -378,7 +385,7 @@ regional_avg_env <- ggplot() +
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("Average synchrony")+
+  ylab("Average Temperature Synchrony")+
   xlab("Year")
 
 
