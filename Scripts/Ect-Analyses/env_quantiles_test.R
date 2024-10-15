@@ -190,6 +190,7 @@ avg_ppt_sync_tmin_quant <- ggplot(data = avg_ppt_sync_timescale_tmin, aes(x = qu
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.ppt.sync, ymax = upper.ci.ppt.sync, x = quantile, y=mean.ppt.sync, width = 0.2)) +
   theme_bw()+
+  ylim(0.0, 2.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   ylab("Average Precipitation Synchrony")+
   xlab("Temperature Quartiles")+
@@ -209,7 +210,7 @@ avg_ppt_sync_tmin_quant <- ggplot(data = avg_ppt_sync_timescale_tmin, aes(x = qu
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
-        panel.grid.major.x=element_blank()) + labs(tag = "B")
+        panel.grid.major.x=element_blank()) 
 
 
 
@@ -405,6 +406,7 @@ avg_tmin_sync_ppt_quant <- ggplot(data = avg_tmin_sync_timescale_ppt, aes(x = qu
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.tmin.sync, ymax = upper.ci.tmin.sync, x = quantile, y=mean.tmin.sync, width = 0.2)) +
   theme_bw()+
+  ylim(0.0, 2.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Temperature Synchrony")+
@@ -425,7 +427,7 @@ avg_tmin_sync_ppt_quant <- ggplot(data = avg_tmin_sync_timescale_ppt, aes(x = qu
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
-        panel.grid.major.x=element_blank()) + labs(tag = "D")
+        panel.grid.major.x=element_blank()) 
 
 
 
@@ -456,6 +458,7 @@ avg_rwi_sync_ppt_quant <- ggplot(data = avg_rwi_sync_timescale_ppt, aes(x = quan
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.rwi.sync, ymax = upper.ci.rwi.sync, x = quantile, y=mean.rwi.sync, width = 0.2)) +
   theme_bw()+
+  ylim(0.0, 1.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Growth Synchrony")+
@@ -476,7 +479,7 @@ avg_rwi_sync_ppt_quant <- ggplot(data = avg_rwi_sync_timescale_ppt, aes(x = quan
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
-        panel.grid.major.x=element_blank()) + labs(tag = "C")
+        panel.grid.major.x=element_blank()) 
 
 
 
@@ -501,6 +504,7 @@ avg_rwi_sync_tmin_quant <- ggplot(data = avg_rwi_sync_timescale_tmin, aes(x = qu
   geom_line()+
   geom_errorbar(aes(ymin = lower.ci.rwi.sync, ymax = upper.ci.rwi.sync, x = quantile, y=mean.rwi.sync, width = 0.2)) +
   theme_bw()+
+  ylim(0.0, 1.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Growth Synchrony")+
@@ -521,5 +525,132 @@ avg_rwi_sync_tmin_quant <- ggplot(data = avg_rwi_sync_timescale_tmin, aes(x = qu
         panel.grid.minor.y=element_blank(),
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
-        panel.grid.major.x=element_blank()) + labs(tag = "A")
+        panel.grid.major.x=element_blank())
 
+
+# perform anova's to test differences between quartile 'groups'
+
+# rwi sync - tmin quartiles
+# expand data to include all data points
+avg_rwi_sync_timescale_tmin <- inner_join(timescale_specific_avg_tmin, avg_rwi_sync, by=join_by(window_year == year, band))
+# make sure quantile is a factor
+avg_rwi_sync_timescale_tmin$quantile <- ordered(avg_rwi_sync_timescale_tmin$quantile, levels = c("1", "2", "3", "4"))
+
+# subset data for biennial timescale band
+avg_rwi_sync_timescale_tmin_b <- avg_rwi_sync_timescale_tmin %>%
+  filter(band == "biennial")
+b.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_b)
+summary(b.rwi.tmin.aov)
+TukeyHSD(b.rwi.tmin.aov)
+# multiannual
+avg_rwi_sync_timescale_tmin_ma <- avg_rwi_sync_timescale_tmin %>%
+  filter(band == "multiannual")
+ma.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_ma)
+summary(ma.rwi.tmin.aov)
+TukeyHSD(ma.rwi.tmin.aov)
+# decadal
+avg_rwi_sync_timescale_tmin_d <- avg_rwi_sync_timescale_tmin %>%
+  filter(band == "decadal")
+d.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_d)
+summary(d.rwi.tmin.aov)
+TukeyHSD(d.rwi.tmin.aov)
+# multidecadal
+avg_rwi_sync_timescale_tmin_md <- avg_rwi_sync_timescale_tmin %>%
+  filter(band == "multidecadal")
+md.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_md)
+summary(md.rwi.tmin.aov)
+TukeyHSD(md.rwi.tmin.aov)
+
+# rwi sync - ppt quartiles
+# expand data to include all data points
+avg_rwi_sync_timescale_ppt <- inner_join(timescale_specific_avg_ppt, avg_rwi_sync, by=join_by(window_year == year, band))
+# make sure quantile is a factor
+avg_rwi_sync_timescale_ppt$quantile <- ordered(avg_rwi_sync_timescale_ppt$quantile, levels = c("1", "2", "3", "4"))
+
+# subset data for biennial timescale band
+avg_rwi_sync_timescale_ppt_b <- avg_rwi_sync_timescale_ppt %>%
+  filter(band == "biennial")
+b.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_b)
+summary(b.rwi.ppt.aov)
+TukeyHSD(b.rwi.ppt.aov)
+# multiannual
+avg_rwi_sync_timescale_ppt_ma <- avg_rwi_sync_timescale_ppt %>%
+  filter(band == "multiannual")
+ma.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_ma)
+summary(ma.rwi.ppt.aov)
+TukeyHSD(ma.rwi.ppt.aov)
+# decadal
+avg_rwi_sync_timescale_ppt_d <- avg_rwi_sync_timescale_ppt %>%
+  filter(band == "decadal")
+d.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_d)
+summary(d.rwi.ppt.aov)
+TukeyHSD(d.rwi.ppt.aov)
+# multidecadal
+avg_rwi_sync_timescale_ppt_md <- avg_rwi_sync_timescale_ppt %>%
+  filter(band == "multidecadal")
+md.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_md)
+summary(md.rwi.ppt.aov)
+TukeyHSD(md.rwi.ppt.aov)
+
+
+# ppt sync - tmin quartiles
+# expand data to include all data points
+avg_ppt_sync_timescale_tmin <- inner_join(timescale_specific_avg_tmin, avg_env_sync_ppt, by=join_by(window_year == year, band == interval))
+# make sure quantile is a factor
+avg_ppt_sync_timescale_tmin$quantile <- ordered(avg_ppt_sync_timescale_tmin$quantile, levels = c("1", "2", "3", "4"))
+
+# subset data for biennial timescale band
+avg_ppt_sync_timescale_tmin_b <- avg_ppt_sync_timescale_tmin %>%
+  filter(band == "biennial")
+b.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_b)
+summary(b.ppt.tmin.aov)
+TukeyHSD(b.ppt.tmin.aov)
+# multiannual
+avg_ppt_sync_timescale_tmin_ma <- avg_ppt_sync_timescale_tmin %>%
+  filter(band == "multiannual")
+ma.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_ma)
+summary(ma.ppt.tmin.aov)
+TukeyHSD(ma.ppt.tmin.aov)
+# decadal
+avg_ppt_sync_timescale_tmin_d <- avg_ppt_sync_timescale_tmin %>%
+  filter(band == "decadal")
+d.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_d)
+summary(d.ppt.tmin.aov)
+TukeyHSD(d.ppt.tmin.aov)
+# multidecadal
+avg_ppt_sync_timescale_tmin_md <- avg_ppt_sync_timescale_tmin %>%
+  filter(band == "multidecadal")
+md.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_md)
+summary(md.ppt.tmin.aov)
+TukeyHSD(md.ppt.tmin.aov)
+
+# tmin sync - ppt quartiles
+# expand data to include all data points
+avg_tmin_sync_timescale_ppt <- inner_join(timescale_specific_avg_ppt, avg_env_sync_tmin, by=join_by(window_year == year, band == interval))
+# make sure quantile is a factor
+avg_tmin_sync_timescale_ppt$quantile <- ordered(avg_tmin_sync_timescale_ppt$quantile, levels = c("1", "2", "3", "4"))
+
+# subset data for biennial timescale band
+avg_tmin_sync_timescale_ppt_b <- avg_tmin_sync_timescale_ppt %>%
+  filter(band == "biennial")
+b.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_b)
+summary(b.tmin.ppt.aov)
+TukeyHSD(b.tmin.ppt.aov)
+# multiannual
+avg_tmin_sync_timescale_ppt_ma <- avg_tmin_sync_timescale_ppt %>%
+  filter(band == "multiannual")
+ma.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_ma)
+summary(ma.tmin.ppt.aov)
+TukeyHSD(ma.tmin.ppt.aov)
+# decadal
+avg_tmin_sync_timescale_ppt_d <- avg_tmin_sync_timescale_ppt %>%
+  filter(band == "decadal")
+d.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_d)
+summary(d.tmin.ppt.aov)
+TukeyHSD(d.tmin.ppt.aov)
+# multidecadal
+avg_tmin_sync_timescale_ppt_md <- avg_tmin_sync_timescale_ppt %>%
+  filter(band == "multidecadal")
+md.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_md)
+summary(md.tmin.ppt.aov)
+TukeyHSD(md.tmin.ppt.aov)

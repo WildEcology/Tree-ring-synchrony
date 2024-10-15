@@ -199,6 +199,7 @@ regional_avg <- ggplot() +
   ylab("Average Growth Synchrony")+
   xlab("Year")
 
+ggsave("/Users/kaitlynmcknight/Desktop/TeamTreeMS1Figs/MS1_FINALFIGS/regional_avg.svg", width = 8, height = 6, units = "in")
 
 # plot z-scores
 avg_sync_standardband <- na.omit(avg_sync_standardband)

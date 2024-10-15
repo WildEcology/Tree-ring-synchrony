@@ -450,7 +450,7 @@ labels <- c(annual = "biennial", interannual = "multiannual", decadal = "decadal
 avg.tv.coh$driver <- factor(avg.tv.coh$driver, levels=c('ppt', 'tmin'))
 ggplot() +
   geom_line(data = avg.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
-  facet_wrap(~ band, labeller=labeller(band = c("biennial" = "Biennial", "multiannual" = "Multiannual", "decadal" = "Decadal", "multidecadal"= "Multidecadal")))+
+  facet_grid(rows = "band", labeller=labeller(band = c("biennial" = "Biennial", "multiannual" = "Multiannual", "decadal" = "Decadal", "multidecadal"= "Multidecadal")))+
   theme_bw()+
   scale_color_manual(values = c("#377EB8", "#E41A1C"), labels = c("Winter Precipitation", "Summer Temperatures"))+
   scale_x_discrete(breaks = seq(1900,2018,10))+
@@ -501,8 +501,81 @@ driver_band
 dev.off()
 
 
+# plot separately for publication
+biennial.tv.coh <- avg.tv.coh %>%
+  filter(band == "biennial")
 
+multiannual.tv.coh <- avg.tv.coh %>%
+  filter(band == "multiannual")
 
-
-
+decadal.tv.coh <- avg.tv.coh %>%
+  filter(band == "decadal")
   
+multidecadal.tv.coh <- avg.tv.coh %>%
+  filter(band == "multidecadal")
+
+ggplot() +
+  geom_line(data = multidecadal.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
+  #facet_wrap(~ band, labeller=labeller(band = c("biennial" = "Biennial", "multiannual" = "Multiannual", "decadal" = "Decadal", "multidecadal"= "Multidecadal")))+
+  theme_bw()+
+  scale_color_manual(values = c("#377EB8", "#E41A1C"), labels = c("Winter Precipitation", "Summer Temperatures"))+
+  scale_x_discrete(breaks = seq(1900,2018,10))+
+  theme(text = element_text(size = 16),
+        axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_blank(),
+        legend.text = element_text(color = "grey20", size = 16,angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) +
+  ylab("Average Coherence")+
+  xlab("Year")
+
+
+ggplot() +
+  geom_line(data = multidecadal.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
+  theme_bw() +
+  scale_color_manual(values = c("#377EB8", "#E41A1C"), labels = c("Winter Precipitation", "Summer Temperatures")) +
+  scale_x_discrete(breaks = seq(1900, 2018, 10), limits = c(1900, 2018)) +
+  theme(
+    text = element_text(size = 16),
+    axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+    axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+    axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+    axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "grey20", size = 16, angle = 0, hjust = 0, face = "plain"),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_blank()) +
+  ylab("Average Coherence") +
+  xlab("Year")
+
+# Ensure 'times' is numeric
+multidecadal.tv.coh$times <- as.numeric(multidecadal.tv.coh$times)
+
+# Plot
+ggplot() +
+  geom_line(data = multidecadal.tv.coh, aes(x = times, y = avg_coh, group = driver, color = driver)) +
+  theme_bw() +
+  scale_color_manual(values = c("#377EB8", "#E41A1C"), labels = c("Winter Precipitation", "Summer Temperatures")) +
+  scale_x_continuous(breaks = seq(1900, 2018, 10), limits = c(1900, 2018)) +
+  theme(
+    text = element_text(size = 16),
+    axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
+    axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+    axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
+    axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "grey20", size = 16, angle = 0, hjust = 0, face = "plain"),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_blank()) +
+  ylab("Average Coherence") +
+  xlab("Year")
+

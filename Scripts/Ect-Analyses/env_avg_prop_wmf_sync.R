@@ -3,8 +3,20 @@
 source(here::here("Scripts/Current-Scripts/datacleaningandsubsetting.R"))
 
 # produce wmf's for ppt and tmin
-tmin_wmf <- plotmag(res_tmin_wmf) 
-ppt_wmf <- plotmag(res_ppt_wmf)
+# Assuming you have two 'tts' objects: object1 and object2
+
+# Get the wavelet fields
+wav1 <- Mod(get_values(res_ppt_wmf))
+wav2 <- Mod(get_values(res_tmin_wmf))
+
+# Find the global range across both datasets
+global_range <- range(c(wav1, wav2), na.rm = TRUE)
+
+
+
+
+tmin_wmf <- plotmag(res_tmin_wmf, zlims = global_range) 
+ppt_wmf <- plotmag(res_ppt_wmf, zlims = global_range)
 
 
 #### Average Sync ####
@@ -358,7 +370,6 @@ final_avg_tmin_sync <- final_avg_env_data %>%
 regional_avg_env <- ggplot() +
   geom_point(data = final_avg_tmin_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
   geom_line(data = final_avg_tmin_sync, aes(x = year, y = predicted, group = interval, color = interval),
-            # color = colortreatpred,
             linewidth = 1) +
   geom_ribbon(data = final_avg_tmin_sync, aes(
     x = year,
@@ -369,9 +380,9 @@ regional_avg_env <- ggplot() +
     ymax = conf.high),
     alpha = 0.2,
     show.legend = F) +
-  #facet_wrap(~driver) +
   theme_bw()+
-  scale_x_discrete(breaks = seq(1900,2018,10))+
+  scale_y_continuous(limits = c(0.5, 2.0), breaks = seq(0.5, 2.0, 0.5))+
+  scale_x_discrete(breaks = seq(1920,2020,20))+
   scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   scale_fill_brewer(palette = "RdYlBu", direction = -1)+
   theme(text = element_text(size = 16),
@@ -385,10 +396,10 @@ regional_avg_env <- ggplot() +
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("Average Temperature Synchrony")+
+  ylab("Average Precipitation Synchrony")+
   xlab("Year")
 
-
+ggsave("/Users/kaitlynmcknight/Desktop/TeamTreeMS1Figs/MS1_FINALFIGS/avg_ppt_sync.svg", width = 8, height = 6, units = "in")
 
 
 
@@ -789,3 +800,14 @@ regional_prop_env <- ggplot(data = prop_env_sync, aes(x = year, y = synch, group
   ylab("Significant Synchrony (Proportion)")+
   xlab("Year")
 
+
+
+# find min and max of avg sync per driver for quad models
+ppt_quad_mods <- final_avg_ppt_sync %>%
+  group_by(interval) %>%
+  summarise(min = min(predicted), max = max(predicted))
+
+tmin_quad_mods <- final_avg_tmin_sync %>%
+  filter(year > 1966) %>%
+  group_by(interval) %>%
+  summarise(min = min(predicted), max = max(predicted))
