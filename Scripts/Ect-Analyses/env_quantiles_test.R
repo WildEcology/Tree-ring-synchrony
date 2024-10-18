@@ -528,129 +528,311 @@ avg_rwi_sync_tmin_quant <- ggplot(data = avg_rwi_sync_timescale_tmin, aes(x = qu
         panel.grid.major.x=element_blank())
 
 
-# perform anova's to test differences between quartile 'groups'
+#### Perform pairwise comparisons of multiple groups using t.tests with bonferroni p-value adjustment ####
+# correction Factor applied for 6 tests per band with 4 quantiles in each band
+corr_p_value <- (0.05/6)
+## RWI Sync across TMIN quantiles ##
 
-# rwi sync - tmin quartiles
 # expand data to include all data points
 avg_rwi_sync_timescale_tmin <- inner_join(timescale_specific_avg_tmin, avg_rwi_sync, by=join_by(window_year == year, band))
+# remove NAs
+avg_rwi_sync_timescale_tmin <- na.omit(avg_rwi_sync_timescale_tmin)
 # make sure quantile is a factor
-avg_rwi_sync_timescale_tmin$quantile <- ordered(avg_rwi_sync_timescale_tmin$quantile, levels = c("1", "2", "3", "4"))
+avg_rwi_sync_timescale_tmin$quantile <- factor(avg_rwi_sync_timescale_tmin$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+# create an empty list to store the results for each band
+t.test_rwi_sync_tmin_quantiles_results <- list()
 
-# subset data for biennial timescale band
-avg_rwi_sync_timescale_tmin_b <- avg_rwi_sync_timescale_tmin %>%
-  filter(band == "biennial")
-b.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_b)
-summary(b.rwi.tmin.aov)
-TukeyHSD(b.rwi.tmin.aov)
-# multiannual
-avg_rwi_sync_timescale_tmin_ma <- avg_rwi_sync_timescale_tmin %>%
-  filter(band == "multiannual")
-ma.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_ma)
-summary(ma.rwi.tmin.aov)
-TukeyHSD(ma.rwi.tmin.aov)
-# decadal
-avg_rwi_sync_timescale_tmin_d <- avg_rwi_sync_timescale_tmin %>%
-  filter(band == "decadal")
-d.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_d)
-summary(d.rwi.tmin.aov)
-TukeyHSD(d.rwi.tmin.aov)
-# multidecadal
-avg_rwi_sync_timescale_tmin_md <- avg_rwi_sync_timescale_tmin %>%
-  filter(band == "multidecadal")
-md.rwi.tmin.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_tmin_md)
-summary(md.rwi.tmin.aov)
-TukeyHSD(md.rwi.tmin.aov)
+# loop through each timescale band
+for (xx in 1:length(unique(avg_rwi_sync_timescale_tmin$band))) {
+  
+  current <- unique(avg_rwi_sync_timescale_tmin$band)[xx]
+  band_data <- avg_rwi_sync_timescale_tmin %>%
+    filter(band == current)
+  
+  # manually generate pairs in the desired order (1-2, 1-3, 1-4, etc.)
+  pairs <- list()
+  # specify the order of quartiles for pair generation (even if the factor levels are reversed)
+  quartile_order <- c("1", "2", "3", "4")
+  
+  for (i in 1:(length(quartile_order) - 1)) {
+    for (j in (i + 1):length(quartile_order)) {
+      pairs[[length(pairs) + 1]] <- c(quartile_order[i], quartile_order[j])
+    }
+  }
+  
+  # ensure the factor levels in the data are still set to 4, 3, 2, 1
+  band_data$quantile <- factor(band_data$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+  
+  # perform t-tests manually for each pair and extract statistics
+  results <- lapply(pairs, function(pair) {
+    # subset data for the current pair
+    subset_data <- subset(band_data, quantile %in% pair)
+    
+    # perform t-test
+    t_test <- t.test(avg_sync ~ quantile, data = subset_data)
+    
+    # calculate mean difference between the two groups
+    group_means <- aggregate(avg_sync ~ quantile, data = subset_data, mean)
+    mean_diff <- diff(group_means$avg_sync)
+    
+    # extract p-values, confidence intervals, and t-statistics
+    data.frame(
+      Band = current,
+      Group1 = pair[1],
+      Group2 = pair[2],
+      Mean_Difference = mean_diff,
+      P_Value = t_test$p.value,
+      Lower_CI = t_test$conf.int[1],
+      Upper_CI = t_test$conf.int[2],
+      T_Statistic = t_test$statistic,
+      DF = t_test$parameter
+    )
+  })
+  # combine the individual paired results into a data frame for the current band
+  band_results_df <- do.call(rbind, results)
+  
+  # apply Bonferroni adjustment for the current band
+  band_results_df$Adjusted_P_Value <- p.adjust(band_results_df$P_Value, method = "bonferroni")
+  
+  # combine the band-specific results
+  t.test_rwi_sync_tmin_quantiles_results [[current]] <- band_results_df
+}
 
-# rwi sync - ppt quartiles
+# combine results for all bands into a data frame
+t.test_rwi_sync_tmin_quantiles_results  <- do.call(rbind, t.test_rwi_sync_tmin_quantiles_results) %>%
+  mutate(significant = case_when(Adjusted_P_Value <= corr_p_value ~ "yes", 
+                                 Adjusted_P_Value > corr_p_value ~ "no"))
+# multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
+t.test_rwi_sync_tmin_quantiles_results$Mean_Difference <- t.test_rwi_sync_tmin_quantiles_results$Mean_Difference * -1
+
+
+
+
+## RWI Sync across PPT quantiles ##
+
 # expand data to include all data points
 avg_rwi_sync_timescale_ppt <- inner_join(timescale_specific_avg_ppt, avg_rwi_sync, by=join_by(window_year == year, band))
+# remove NAs
+avg_rwi_sync_timescale_ppt <- na.omit(avg_rwi_sync_timescale_ppt)
 # make sure quantile is a factor
-avg_rwi_sync_timescale_ppt$quantile <- ordered(avg_rwi_sync_timescale_ppt$quantile, levels = c("1", "2", "3", "4"))
+avg_rwi_sync_timescale_ppt$quantile <- factor(avg_rwi_sync_timescale_ppt$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+# create an empty list to store the results for each band
+t.test_rwi_sync_ppt_quantiles_results <- list()
 
-# subset data for biennial timescale band
-avg_rwi_sync_timescale_ppt_b <- avg_rwi_sync_timescale_ppt %>%
-  filter(band == "biennial")
-b.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_b)
-summary(b.rwi.ppt.aov)
-TukeyHSD(b.rwi.ppt.aov)
-# multiannual
-avg_rwi_sync_timescale_ppt_ma <- avg_rwi_sync_timescale_ppt %>%
-  filter(band == "multiannual")
-ma.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_ma)
-summary(ma.rwi.ppt.aov)
-TukeyHSD(ma.rwi.ppt.aov)
-# decadal
-avg_rwi_sync_timescale_ppt_d <- avg_rwi_sync_timescale_ppt %>%
-  filter(band == "decadal")
-d.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_d)
-summary(d.rwi.ppt.aov)
-TukeyHSD(d.rwi.ppt.aov)
-# multidecadal
-avg_rwi_sync_timescale_ppt_md <- avg_rwi_sync_timescale_ppt %>%
-  filter(band == "multidecadal")
-md.rwi.ppt.aov <- aov(avg_sync~quantile, data = avg_rwi_sync_timescale_ppt_md)
-summary(md.rwi.ppt.aov)
-TukeyHSD(md.rwi.ppt.aov)
+# loop through each timescale band
+for (xx in 1:length(unique(avg_rwi_sync_timescale_ppt$band))) {
+  
+  current <- unique(avg_rwi_sync_timescale_ppt$band)[xx]
+  band_data <- avg_rwi_sync_timescale_ppt %>%
+    filter(band == current)
+  
+  # manually generate pairs in the desired order (1-2, 1-3, 1-4, etc.)
+  pairs <- list()
+  # specify the order of quartiles for pair generation (even if the factor levels are reversed)
+  quartile_order <- c("1", "2", "3", "4")
+  
+  for (i in 1:(length(quartile_order) - 1)) {
+    for (j in (i + 1):length(quartile_order)) {
+      pairs[[length(pairs) + 1]] <- c(quartile_order[i], quartile_order[j])
+    }
+  }
+  
+  # ensure the factor levels in the data are still set to 4, 3, 2, 1
+  band_data$quantile <- factor(band_data$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+  
+  # perform t-tests manually for each pair and extract statistics
+  results <- lapply(pairs, function(pair) {
+    # subset data for the current pair
+    subset_data <- subset(band_data, quantile %in% pair)
+    
+    # perform t-test
+    t_test <- t.test(avg_sync ~ quantile, data = subset_data)
+    
+    # calculate mean difference between the two groups
+    group_means <- aggregate(avg_sync ~ quantile, data = subset_data, mean)
+    mean_diff <- diff(group_means$avg_sync)
+    
+    # extract p-values, confidence intervals, and t-statistics
+    data.frame(
+      Band = current,
+      Group1 = pair[1],
+      Group2 = pair[2],
+      Mean_Difference = mean_diff,
+      P_Value = t_test$p.value,
+      Lower_CI = t_test$conf.int[1],
+      Upper_CI = t_test$conf.int[2],
+      T_Statistic = t_test$statistic,
+      DF = t_test$parameter
+    )
+  })
+  # combine the individual paired results into a data frame for the current band
+  band_results_df <- do.call(rbind, results)
+  
+  # apply Bonferroni adjustment for the current band
+  band_results_df$Adjusted_P_Value <- p.adjust(band_results_df$P_Value, method = "bonferroni")
+  
+  # combine the band-specific results
+  t.test_rwi_sync_ppt_quantiles_results [[current]] <- band_results_df
+}
+
+# combine results for all bands into a data frame
+t.test_rwi_sync_ppt_quantiles_results  <- do.call(rbind, t.test_rwi_sync_ppt_quantiles_results) %>%
+  mutate(significant = case_when(Adjusted_P_Value <= corr_p_value ~ "yes", 
+                                 Adjusted_P_Value > corr_p_value ~ "no"))
+# multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
+t.test_rwi_sync_ppt_quantiles_results$Mean_Difference <- t.test_rwi_sync_ppt_quantiles_results$Mean_Difference * -1
 
 
-# ppt sync - tmin quartiles
+
+
+## PPT Sync across TMIN quantiles ##
+
 # expand data to include all data points
 avg_ppt_sync_timescale_tmin <- inner_join(timescale_specific_avg_tmin, avg_env_sync_ppt, by=join_by(window_year == year, band == interval))
+# remove NAs
+avg_ppt_sync_timescale_tmin <- na.omit(avg_ppt_sync_timescale_tmin)
 # make sure quantile is a factor
-avg_ppt_sync_timescale_tmin$quantile <- ordered(avg_ppt_sync_timescale_tmin$quantile, levels = c("1", "2", "3", "4"))
+avg_ppt_sync_timescale_tmin$quantile <- factor(avg_ppt_sync_timescale_tmin$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+# create an empty list to store the results for each band
+t.test_ppt_sync_tmin_quantiles_results <- list()
 
-# subset data for biennial timescale band
-avg_ppt_sync_timescale_tmin_b <- avg_ppt_sync_timescale_tmin %>%
-  filter(band == "biennial")
-b.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_b)
-summary(b.ppt.tmin.aov)
-TukeyHSD(b.ppt.tmin.aov)
-# multiannual
-avg_ppt_sync_timescale_tmin_ma <- avg_ppt_sync_timescale_tmin %>%
-  filter(band == "multiannual")
-ma.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_ma)
-summary(ma.ppt.tmin.aov)
-TukeyHSD(ma.ppt.tmin.aov)
-# decadal
-avg_ppt_sync_timescale_tmin_d <- avg_ppt_sync_timescale_tmin %>%
-  filter(band == "decadal")
-d.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_d)
-summary(d.ppt.tmin.aov)
-TukeyHSD(d.ppt.tmin.aov)
-# multidecadal
-avg_ppt_sync_timescale_tmin_md <- avg_ppt_sync_timescale_tmin %>%
-  filter(band == "multidecadal")
-md.ppt.tmin.aov <- aov(avg_sync~quantile, data = avg_ppt_sync_timescale_tmin_md)
-summary(md.ppt.tmin.aov)
-TukeyHSD(md.ppt.tmin.aov)
+# loop through each timescale band
+for (xx in 1:length(unique(avg_ppt_sync_timescale_tmin$band))) {
+  
+  current <- unique(avg_ppt_sync_timescale_tmin$band)[xx]
+  band_data <- avg_ppt_sync_timescale_tmin %>%
+    filter(band == current)
+  
+  # manually generate pairs in the desired order (1-2, 1-3, 1-4, etc.)
+  pairs <- list()
+  # specify the order of quartiles for pair generation (even if the factor levels are reversed)
+  quartile_order <- c("1", "2", "3", "4")
+  
+  for (i in 1:(length(quartile_order) - 1)) {
+    for (j in (i + 1):length(quartile_order)) {
+      pairs[[length(pairs) + 1]] <- c(quartile_order[i], quartile_order[j])
+    }
+  }
+  
+  # ensure the factor levels in the data are still set to 4, 3, 2, 1
+  band_data$quantile <- factor(band_data$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+  
+  # perform t-tests manually for each pair and extract statistics
+  results <- lapply(pairs, function(pair) {
+    # subset data for the current pair
+    subset_data <- subset(band_data, quantile %in% pair)
+    
+    # perform t-test
+    t_test <- t.test(avg_sync ~ quantile, data = subset_data)
+    
+    # calculate mean difference between the two groups
+    group_means <- aggregate(avg_sync ~ quantile, data = subset_data, mean)
+    mean_diff <- diff(group_means$avg_sync)
+    
+    # extract p-values, confidence intervals, and t-statistics
+    data.frame(
+      Band = current,
+      Group1 = pair[1],
+      Group2 = pair[2],
+      Mean_Difference = mean_diff,
+      P_Value = t_test$p.value,
+      Lower_CI = t_test$conf.int[1],
+      Upper_CI = t_test$conf.int[2],
+      T_Statistic = t_test$statistic,
+      DF = t_test$parameter
+    )
+  })
+  # combine the individual paired results into a data frame for the current band
+  band_results_df <- do.call(rbind, results)
+  
+  # apply Bonferroni adjustment for the current band
+  band_results_df$Adjusted_P_Value <- p.adjust(band_results_df$P_Value, method = "bonferroni")
+  
+  # combine the band-specific results
+  t.test_ppt_sync_tmin_quantiles_results [[current]] <- band_results_df
+}
 
-# tmin sync - ppt quartiles
+# combine results for all bands into a data frame
+t.test_ppt_sync_tmin_quantiles_results  <- do.call(rbind, t.test_ppt_sync_tmin_quantiles_results) %>%
+  mutate(significant = case_when(Adjusted_P_Value <= corr_p_value ~ "yes", 
+                                 Adjusted_P_Value > corr_p_value ~ "no"))
+# multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
+t.test_ppt_sync_tmin_quantiles_results$Mean_Difference <- t.test_ppt_sync_tmin_quantiles_results$Mean_Difference * -1
+
+
+
+## TMIN Sync across PPT quantiles ##
 # expand data to include all data points
 avg_tmin_sync_timescale_ppt <- inner_join(timescale_specific_avg_ppt, avg_env_sync_tmin, by=join_by(window_year == year, band == interval))
+# remove NAs
+avg_tmin_sync_timescale_ppt <- na.omit(avg_tmin_sync_timescale_ppt)
 # make sure quantile is a factor
-avg_tmin_sync_timescale_ppt$quantile <- ordered(avg_tmin_sync_timescale_ppt$quantile, levels = c("1", "2", "3", "4"))
+avg_tmin_sync_timescale_ppt$quantile <- factor(avg_tmin_sync_timescale_ppt$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+# create an empty list to store the results for each band
+t.test_tmin_sync_ppt_quantiles_results <- list()
 
-# subset data for biennial timescale band
-avg_tmin_sync_timescale_ppt_b <- avg_tmin_sync_timescale_ppt %>%
-  filter(band == "biennial")
-b.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_b)
-summary(b.tmin.ppt.aov)
-TukeyHSD(b.tmin.ppt.aov)
-# multiannual
-avg_tmin_sync_timescale_ppt_ma <- avg_tmin_sync_timescale_ppt %>%
-  filter(band == "multiannual")
-ma.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_ma)
-summary(ma.tmin.ppt.aov)
-TukeyHSD(ma.tmin.ppt.aov)
-# decadal
-avg_tmin_sync_timescale_ppt_d <- avg_tmin_sync_timescale_ppt %>%
-  filter(band == "decadal")
-d.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_d)
-summary(d.tmin.ppt.aov)
-TukeyHSD(d.tmin.ppt.aov)
-# multidecadal
-avg_tmin_sync_timescale_ppt_md <- avg_tmin_sync_timescale_ppt %>%
-  filter(band == "multidecadal")
-md.tmin.ppt.aov <- aov(avg_sync~quantile, data = avg_tmin_sync_timescale_ppt_md)
-summary(md.tmin.ppt.aov)
-TukeyHSD(md.tmin.ppt.aov)
+# loop through each timescale band
+for (xx in 1:length(unique(avg_tmin_sync_timescale_ppt$band))) {
+  
+  current <- unique(avg_tmin_sync_timescale_ppt$band)[xx]
+  band_data <- avg_tmin_sync_timescale_ppt %>%
+    filter(band == current)
+  
+  # manually generate pairs in the desired order (1-2, 1-3, 1-4, etc.)
+  pairs <- list()
+  # specify the order of quartiles for pair generation (even if the factor levels are reversed)
+  quartile_order <- c("1", "2", "3", "4")
+  
+  for (i in 1:(length(quartile_order) - 1)) {
+    for (j in (i + 1):length(quartile_order)) {
+      pairs[[length(pairs) + 1]] <- c(quartile_order[i], quartile_order[j])
+    }
+  }
+  
+  # ensure the factor levels in the data are still set to 4, 3, 2, 1
+  band_data$quantile <- factor(band_data$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+  
+  # perform t-tests manually for each pair and extract statistics
+  results <- lapply(pairs, function(pair) {
+    # subset data for the current pair
+    subset_data <- subset(band_data, quantile %in% pair)
+    
+    # perform t-test
+    t_test <- t.test(avg_sync ~ quantile, data = subset_data)
+    
+    # calculate mean difference between the two groups
+    group_means <- aggregate(avg_sync ~ quantile, data = subset_data, mean)
+    mean_diff <- diff(group_means$avg_sync)
+    
+    # extract p-values, confidence intervals, and t-statistics
+    data.frame(
+      Band = current,
+      Group1 = pair[1],
+      Group2 = pair[2],
+      Mean_Difference = mean_diff,
+      P_Value = t_test$p.value,
+      Lower_CI = t_test$conf.int[1],
+      Upper_CI = t_test$conf.int[2],
+      T_Statistic = t_test$statistic,
+      DF = t_test$parameter
+    )
+  })
+  # combine the individual paired results into a data frame for the current band
+  band_results_df <- do.call(rbind, results)
+  
+  # apply Bonferroni adjustment for the current band
+  band_results_df$Adjusted_P_Value <- p.adjust(band_results_df$P_Value, method = "bonferroni")
+  
+  # combine the band-specific results
+  t.test_tmin_sync_ppt_quantiles_results [[current]] <- band_results_df
+}
+
+# combine results for all bands into a data frame
+t.test_tmin_sync_ppt_quantiles_results  <- do.call(rbind, t.test_tmin_sync_ppt_quantiles_results) %>%
+  mutate(significant = case_when(Adjusted_P_Value <= corr_p_value ~ "yes", 
+                                 Adjusted_P_Value > corr_p_value ~ "no"))
+# multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
+t.test_tmin_sync_ppt_quantiles_results$Mean_Difference <- t.test_tmin_sync_ppt_quantiles_results$Mean_Difference * -1
+
+
+
