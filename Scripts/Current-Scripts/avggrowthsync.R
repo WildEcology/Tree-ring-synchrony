@@ -26,6 +26,7 @@ M2$year <- year
 M2<- M2 %>%
   pivot_longer(1:67, names_to = "ts", values_to = "values")
 M2 <- na.omit(M2)
+  
 M2events <- M2 %>%
   mutate(event = case_when(values >= sync ~ "synchronous",
                            values <= async ~ "asynchronous",
@@ -33,17 +34,50 @@ M2events <- M2 %>%
 
 # classify timescale intervals
 M2events$ts <- as.numeric(M2events$ts)
-M2events$ts <- as.numeric(M2events$ts)
 M2events <- M2events %>%
   mutate(interval = case_when(ts >= 2 & ts <= 3 ~ "biennial",
                               ts > 3 & ts <= 10 ~ "multiannual",
                               ts > 10 & ts <= 20 ~ "decadal",
                               ts > 20 & ts <= 30 ~ "multidecadal"))
 
+# find how many timescales are included in each band per year
+M2events_filtered <- M2events %>%
+  group_by(year, interval) %>%
+  summarise(num_ts = n())
 
-avg_sync <- M2events %>%
+M2events_filtered <- na.omit(M2events_filtered)
+
+# filter for years where all timescales in a band are included
+num_ts_per_band <- M2events %>%
+  group_by(interval) %>%
+  summarise(ts_num = n_distinct(ts))
+  
+M2events_filtered <- left_join(M2events_filtered, num_ts_per_band)
+
+M2events_filtered <- M2events_filtered %>%
+  mutate(keep = case_when(num_ts == ts_num ~ "yes",
+                          num_ts != ts_num ~ "no"))
+
+M2events_filtered <- M2events_filtered %>%
+  filter(keep == "yes") %>%
+  unite("uID", 1:2, sep = "_", remove = FALSE)
+
+M2events_filtered <- M2events_filtered$uID
+
+M2events <- M2events %>%
+  select(year, interval, ts, values) %>%
+  unite("uID", 1:2, sep = "_", remove = FALSE)
+
+M2events_condensed_timeseries <- M2events %>%
+  filter(uID %in% M2events_filtered)
+
+avg_sync <- M2events_condensed_timeseries %>%
   group_by(year, interval) %>%
   summarise(avg_sync = mean(values))
+
+ggplot(avg_sync, aes(x=year, y=avg_sync, col=interval)) +
+  geom_point()+
+  facet_wrap(~interval)
   
 avg_sync_standardband <- avg_sync %>%
   ungroup()%>%
@@ -62,36 +96,60 @@ library(glmmTMB)
 library(ggeffects)
 avg_sync_annual <- avg_sync_standardband %>%
   filter(interval == "biennial")
-anull_model <- glmmTMB(avg_sync~1, 
+bnull_model <- glmmTMB(avg_sync~1, 
                        data = avg_sync_annual)
 
-alinear_model <-
+blinear_model <-
   glmmTMB(avg_sync ~ scaled_year, 
           data= avg_sync_annual)
 
-aquad_model <-
+bquad_model_2 <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_sync_annual)
 
-AIC(anull_model, alinear_model, aquad_model)
-# quad fit best
+bquad_model_3 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 3, raw=TRUE), 
+          data= avg_sync_annual)
+
+bquad_model_4 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 4, raw=TRUE), 
+          data= avg_sync_annual)
+
+bquad_model_5 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 5, raw=TRUE), 
+          data= avg_sync_annual)
+
+baic <- AIC(bnull_model, blinear_model, bquad_model_2)
+
 
 
 avg_sync_inter <- avg_sync_standardband%>%
   filter(interval == "multiannual")
 
-inull_model <- glmmTMB(avg_sync~1, 
+manull_model <- glmmTMB(avg_sync~1, 
                        data = avg_sync_inter)
 
-ilinear_model <-
+malinear_model <-
   glmmTMB(avg_sync ~ scaled_year, 
           data= avg_sync_inter)
 
-iquad_model <-
+maquad_model_2 <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_sync_inter)
 
-AIC(inull_model, ilinear_model, iquad_model)
+maquad_model_3 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 3, raw=TRUE), 
+          data= avg_sync_inter)
+
+maquad_model_4 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 4, raw=TRUE), 
+          data= avg_sync_inter)
+
+maquad_model_5 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 5, raw=TRUE), 
+          data= avg_sync_inter)
+
+maaic <- AIC(manull_model, malinear_model, maquad_model_2)
 # quad fit best
 
 avg_sync_decadal <- avg_sync_standardband%>%
@@ -104,50 +162,74 @@ dlinear_model <-
   glmmTMB(avg_sync ~ scaled_year, 
           data= avg_sync_decadal)
 
-dquad_model <-
+dquad_model_2 <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_sync_decadal)
 
-AIC(dnull_model, dlinear_model, dquad_model)
+dquad_model_3 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 3, raw=TRUE), 
+          data= avg_sync_decadal)
+
+dquad_model_4 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 4, raw=TRUE), 
+          data= avg_sync_decadal)
+
+dquad_model_5 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 5, raw=TRUE), 
+          data= avg_sync_decadal)
+
+daic <- AIC(dnull_model, dlinear_model, dquad_model_2)
 # linear fit best
 
 avg_sync_multi <- avg_sync_standardband%>%
   filter(interval == "multidecadal")
 
-mnull_model <- glmmTMB(avg_sync~1, 
+mdnull_model <- glmmTMB(avg_sync~1, 
                        data = avg_sync_multi)
 
-mlinear_model <-
+mdlinear_model <-
   glmmTMB(avg_sync ~ scaled_year, 
           data= avg_sync_multi)
 
-mquad_model <-
+mdquad_model_2 <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_sync_multi)
 
-AIC(mnull_model, mlinear_model, mquad_model)
+mdquad_model_3 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 3, raw=TRUE), 
+          data= avg_sync_multi)
+
+mdquad_model_4 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 4, raw=TRUE), 
+          data= avg_sync_multi)
+
+mdquad_model_5 <-
+  glmmTMB(avg_sync~ poly(scaled_year, 5, raw=TRUE), 
+          data= avg_sync_multi)
+
+mdaic <- AIC(mdnull_model, mdlinear_model, mdquad_model_2)
 # quad fits best
 
 # All together:
-avis_prod <- ggpredict(aquad_model, 
+avis_prod <- ggpredict(bquad_model_2, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
-                       ci.lvl = .95)
+                       ci_level = .95)
 avis_prod$band <- "biennial"
-ivis_prod <- ggpredict(iquad_model, 
+ivis_prod <- ggpredict(maquad_model_2, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
-                       ci.lvl = .95)
+                       ci_level = .95)
 ivis_prod$band <- "multiannual"
-dvis_prod <- ggpredict(dlinear_model, 
+dvis_prod <- ggpredict(dquad_model_2, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
-                       ci.lvl = .95)
+                       ci_level = .95)
 dvis_prod$band <- "decadal"
-mvis_prod <- ggpredict(mquad_model, 
+mvis_prod <- ggpredict(mdquad_model_2, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
-                       ci.lvl = .95)
+                       ci_level = .95)
 mvis_prod$band <- "multidecadal"
 
 avg_sync_standardband_tojoin <- avg_sync_standardband %>% 
@@ -156,15 +238,15 @@ avg_sync_standardband_tojoin <- avg_sync_standardband %>%
 
 final_avg_data <- rbind(avis_prod, ivis_prod, dvis_prod, mvis_prod)
 
-final_avg_data <- full_join(avg_sync_standardband_tojoin, final_avg_data, by="x")
+final_avg_data <- inner_join(avg_sync_standardband, final_avg_data, by=join_by(interval == band, x))
 final_avg_data$year <- as.character(final_avg_data$year)
-final_avg_data$band <- factor(final_avg_data$band, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
+final_avg_data$band <- factor(final_avg_data$interval, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 avg_sync_standardband$year <- as.character(avg_sync_standardband$year)
 avg_sync_standardband$band <- factor(avg_sync_standardband$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 
 
 regional_avg <- ggplot() +
-  geom_point(data = avg_sync_standardband, aes(x=year, y=avg_sync, col= band), alpha = 0.1) +
+  geom_point(data = final_avg_data, aes(x=year, y=avg_sync, col= band), alpha = 0.2) +
   geom_line(data = final_avg_data, aes(x = year, y = predicted, group = band, col = band),
             linewidth = 1) +
   geom_ribbon(data = final_avg_data, aes(
@@ -176,12 +258,12 @@ regional_avg <- ggplot() +
     ymax = conf.high),
     alpha = 0.2,
     show.legend = F) +
-  #facet_grid(~factor(band, levels = c("biennial", "multiannual", "decadal", "multidecadal")), labeller = labeller(band = c("Biennial" = "biennial", 
-                                                 #"Multiannual" = "multiannual", 
-                                                 #"Decadal" = "decadal", 
-                                                 #"Multidecadal" = "multidecadal")))+
+  # facet_wrap(~factor(band, levels = c("biennial", "multiannual", "decadal", "multidecadal")), labeller = labeller(band = c("Biennial" = "biennial", 
+  #                                                "Multiannual" = "multiannual",
+  #                                                "Decadal" = "decadal",
+  #                                                "Multidecadal" = "multidecadal")))+
   theme_bw()+
-  scale_x_discrete(breaks = seq(1900,2018,10))+
+  scale_x_discrete(breaks = seq(1920,2020,20))+
   scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   scale_fill_brewer(palette = "RdYlBu", direction = -1)+
   theme(axis.text.x = element_text(color = "grey20", size = 12, angle = 45, hjust = 1, face = "plain"),
@@ -645,3 +727,27 @@ ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average Synchrony")+
   xlab("Year")
+
+
+#### emmeans comparing min and max years of timeseries ####
+
+extremes <- final_avg_data %>%
+  group_by(band) %>%
+  filter(year == min(year) | year == max(year) | predicted == min(predicted)) %>%
+  arrange(band, year, predicted)
+
+extremes <- extremes %>%
+  select(band, year, scaled_year, predicted)
+
+b_EM <- emmeans::emmeans(bquad_model_2, ~scaled_year, at = list(scaled_year = c(2.0902287, -2.0902287)))
+pairs(b_EM)
+
+ma_EM <- emmeans::emmeans(maquad_model_2, ~scaled_year, at = list(scaled_year = c(1.7861954, -1.7861954)))
+pairs(ma_EM)
+
+d_EM <- emmeans::emmeans(dquad_model_2, ~scaled_year, at = list(scaled_year = c(1.3301455, -1.3301455)))
+pairs(d_EM)
+
+md_EM <- emmeans::emmeans(mdquad_model_2, ~scaled_year, at = list(scaled_year = c(0.9120998, -0.9120998)))
+pairs(md_EM)
+

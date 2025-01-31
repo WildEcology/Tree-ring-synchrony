@@ -67,10 +67,11 @@ SEM.B  <- 'rwi_sync ~ ppt_sync
         rwi_sync ~ tmin_sync
         rwi_sync ~ ts_ppt
         rwi_sync ~ ts_tmin
-        tmin_sync ~ ts_tmin
-        tmin_sync ~ ts_ppt
-        ppt_sync ~ ts_tmin
-        ppt_sync ~ ts_ppt'
+        tmin_sync ~~ ts_tmin
+        tmin_sync ~~ ts_ppt
+        ppt_sync ~~ ts_tmin
+        ppt_sync ~~ ts_ppt
+        '
 SEM.B.fit <- sem(SEM.B, data=biennial_df)
 summary(SEM.B.fit, stand=TRUE, rsq=TRUE)
 
@@ -82,10 +83,10 @@ SEM.MA  <- 'rwi_sync ~ ppt_sync
         rwi_sync ~ tmin_sync
         rwi_sync ~ ts_ppt
         rwi_sync ~ ts_tmin
-        tmin_sync ~ ts_tmin
-        tmin_sync ~ ts_ppt
-        ppt_sync ~ ts_tmin
-        ppt_sync ~ ts_ppt'
+        tmin_sync ~~ ts_tmin
+        tmin_sync ~~ ts_ppt
+        ppt_sync ~~ ts_tmin
+        ppt_sync ~~ ts_ppt'
 SEM.MA.fit <- sem(SEM.MA, data=multiannual_df)
 summary(SEM.MA.fit, stand=TRUE, rsq=TRUE)
 
@@ -97,10 +98,10 @@ SEM.D  <- 'rwi_sync ~ ppt_sync
         rwi_sync ~ tmin_sync
         rwi_sync ~ ts_ppt
         rwi_sync ~ ts_tmin
-        tmin_sync ~ ts_tmin
-        tmin_sync ~ ts_ppt
-        ppt_sync ~ ts_tmin
-        ppt_sync ~ ts_ppt'
+        tmin_sync ~~ ts_tmin
+        tmin_sync ~~ ts_ppt
+        ppt_sync ~~ ts_tmin
+        ppt_sync ~~ ts_ppt'
 SEM.D.fit <- sem(SEM.D, data=decadal_df)
 summary(SEM.D.fit, stand=TRUE, rsq=TRUE)
 
@@ -112,10 +113,10 @@ SEM.MD  <- 'rwi_sync ~ ppt_sync
         rwi_sync ~ tmin_sync
         rwi_sync ~ ts_ppt
         rwi_sync ~ ts_tmin
-        tmin_sync ~ ts_tmin
-        tmin_sync ~ ts_ppt
-        ppt_sync ~ ts_tmin
-        ppt_sync ~ ts_ppt'
+        tmin_sync ~~ ts_tmin
+        tmin_sync ~~ ts_ppt
+        ppt_sync ~~ ts_tmin
+        ppt_sync ~~ ts_ppt'
 SEM.MD.fit <- sem(SEM.MD, data=multidecadal_df)
 summary(SEM.MD.fit, stand=TRUE, rsq=TRUE)
 

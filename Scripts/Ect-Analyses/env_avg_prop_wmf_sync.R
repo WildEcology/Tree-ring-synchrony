@@ -58,9 +58,38 @@ M_pptevents <- M_pptevents %>%
                               ts > 3 & ts <= 10 ~ "multiannual",
                               ts > 10 & ts <= 20 ~ "decadal",
                               ts > 20 & ts <= 30 ~ "multidecadal"))
+# find how many timescales are included in each band per year
+M_pptevents_filtered <- M_pptevents %>%
+  group_by(year, interval) %>%
+  summarise(num_ts = n())
 
+M_pptevents_filtered <- na.omit(M_pptevents_filtered)
 
-avg_sync_ppt <- M_pptevents %>%
+# filter for years where all timescales in a band are included
+num_ts_per_band <- M_pptevents %>%
+  group_by(interval) %>%
+  summarise(ts_num = n_distinct(ts))
+
+M_pptevents_filtered <- left_join(M_pptevents_filtered, num_ts_per_band)
+
+M_pptevents_filtered <- M_pptevents_filtered %>%
+  mutate(keep = case_when(num_ts == ts_num ~ "yes",
+                          num_ts != ts_num ~ "no"))
+
+M_pptevents_filtered <- M_pptevents_filtered %>%
+  filter(keep == "yes") %>%
+  unite("uID", 1:2, sep = "_", remove = FALSE)
+
+M_pptevents_filtered <- M_pptevents_filtered$uID
+
+M_pptevents <- M_pptevents %>%
+  select(year, interval, ts, values) %>%
+  unite("uID", 1:2, sep = "_", remove = FALSE)
+
+M_pptevents_condensed_timeseries <- M_pptevents %>%
+  filter(uID %in% M_pptevents_filtered)
+
+avg_sync_ppt <- M_pptevents_condensed_timeseries %>%
   group_by(year, interval) %>%
   summarise(avg_sync = mean(values))
 avg_sync_ppt$driver <- "ppt"
@@ -105,8 +134,38 @@ M_tminevents <- M_tminevents %>%
                               ts > 10 & ts <= 20 ~ "decadal",
                               ts > 20 & ts <= 30 ~ "multidecadal"))
 
+# find how many timescales are included in each band per year
+M_tminevents_filtered <- M_tminevents %>%
+  group_by(year, interval) %>%
+  summarise(num_ts = n())
 
-avg_sync_tmin <- M_tminevents %>%
+M_tminevents_filtered <- na.omit(M_tminevents_filtered)
+
+# filter for years where all timescales in a band are included
+num_ts_per_band <- M_tminevents %>%
+  group_by(interval) %>%
+  summarise(ts_num = n_distinct(ts))
+
+M_tminevents_filtered <- left_join(M_tminevents_filtered, num_ts_per_band)
+
+M_tminevents_filtered <- M_tminevents_filtered %>%
+  mutate(keep = case_when(num_ts == ts_num ~ "yes",
+                          num_ts != ts_num ~ "no"))
+
+M_tminevents_filtered <- M_tminevents_filtered %>%
+  filter(keep == "yes") %>%
+  unite("uID", 1:2, sep = "_", remove = FALSE)
+
+M_tminevents_filtered <- M_tminevents_filtered$uID
+
+M_tminevents <- M_tminevents %>%
+  select(year, interval, ts, values) %>%
+  unite("uID", 1:2, sep = "_", remove = FALSE)
+
+M_tminevents_condensed_timeseries <- M_tminevents %>%
+  filter(uID %in% M_tminevents_filtered)
+
+avg_sync_tmin <- M_tminevents_condensed_timeseries %>%
   group_by(year, interval) %>%
   summarise(avg_sync = mean(values))
 avg_sync_tmin$driver <- "tmin"
@@ -118,32 +177,10 @@ avg_env_sync <- na.omit(avg_env_sync)
 
 avg_env_sync$interval <- factor(avg_env_sync$interval, levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 
-regional_avg_env <- ggplot(data = avg_env_sync, aes(x = year, y = avg_sync, group = interval, color = interval)) +
-  geom_point(alpha = 0.3) +
-  geom_smooth(method = loess, se = FALSE)+
-  theme_bw()+
-  facet_wrap(~driver)+
-  scale_color_brewer(palette="Spectral", type = "seq")+
-  scale_x_continuous(breaks = seq(1900,2018,10))+
-  theme(axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
-        axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
-        axis.title.x = element_text(color = "black", size = 16, angle = 0, hjust = .5, face = "plain"),
-        axis.title.y = element_text(color = "black", size = 16, angle = 90, hjust = .5, face = "plain"),
-        legend.title = element_blank(),
-        legend.text = element_text(color = "grey20", size = 10,angle = 0, hjust = 0, face = "plain"),
-        panel.grid.minor.y=element_blank(),
-        panel.grid.major.y=element_blank(),
-        panel.grid.minor.x=element_blank(),
-        panel.grid.major.x=element_blank()) +
-  ylab("Average synchrony")+
-  xlab("Year")
-
 # testing model fit for both variables
 library(glmmTMB)
 library(ggeffects)
 avg_env_sync$year <- as.numeric(avg_env_sync$year)
-
-
 avg_env_sync$interval <- as.factor(avg_env_sync$interval)
 avg_env_sync$scaled_year <- scale(avg_env_sync$year)
 avg_env_sync$x <- as.numeric(round(avg_env_sync$scaled_year,2))
@@ -166,7 +203,7 @@ Bquad_model_ppt <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_ppt_B)
 
-AIC(Bnull_model_ppt, Blinear_model_ppt, Bquad_model_ppt)
+b_ppt_aic <- AIC(Bnull_model_ppt, Blinear_model_ppt, Bquad_model_ppt)
 # linear fit best
 
 # multiannual 
@@ -183,10 +220,10 @@ MAquad_model_ppt <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_ppt_MA)
 
-AIC(MAnull_model_ppt, MAlinear_model_ppt, MAquad_model_ppt)
+ma_ppt_aic<- AIC(MAnull_model_ppt, MAlinear_model_ppt, MAquad_model_ppt)
 # quad fit best
 
-# biennial 
+# decadal
 avg_env_sync_ppt_D <- avg_env_sync_ppt%>%
   filter(interval == "decadal")
 Dnull_model_ppt <- glmmTMB(avg_sync~1, 
@@ -200,7 +237,7 @@ Dquad_model_ppt <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_ppt_D)
 
-AIC(Dnull_model_ppt, Dlinear_model_ppt, Dquad_model_ppt)
+d_ppt_aic<- AIC(Dnull_model_ppt, Dlinear_model_ppt, Dquad_model_ppt)
 # quad fit best
 
 # multidecadal
@@ -217,7 +254,7 @@ MDquad_model_ppt <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_ppt_MD)
 
-AIC(MDnull_model_ppt, MDlinear_model_ppt, MDquad_model_ppt)
+md_ppt_aic<- AIC(MDnull_model_ppt, MDlinear_model_ppt, MDquad_model_ppt)
 # quad fit best
 
 
@@ -227,11 +264,26 @@ Bvis_prod_ppt <- ggpredict(Blinear_model_ppt,
                        type = "fe", 
                        ci.lvl = .95)
 Bvis_prod_ppt$interval <- "biennial"
-MAvis_prod_ppt <- ggpredict(MAquad_model_ppt, 
-                       terms = c("scaled_year[all]"), 
-                       type = "fe", 
-                       ci.lvl = .95)
-MAvis_prod_ppt$interval <- "multiannual"
+
+intercept <- fixef(MAnull_model_ppt)$cond["(Intercept)"]
+vcov_matrix <- vcov(MAnull_model_ppt)$cond
+se_intercept <- sqrt(vcov_matrix["(Intercept)", "(Intercept)"])
+ci_low <- intercept - 1.96 * se_intercept
+ci_high <- intercept + 1.96 * se_intercept
+
+# Create a data frame for the null model predictions
+MAvis_prod_ppt <- data.frame(
+  x = avg_env_sync_ppt_MA$x, # mimic "scaled_year[all]"
+  predicted = intercept,
+  std.error = se_intercept,
+  conf.low = ci_low,
+  conf.high = ci_high,
+  group = "1",
+  interval = "multiannual"# Ensure it matches the intervals in other models
+)
+
+
+
 Dvis_prod_ppt <- ggpredict(Dquad_model_ppt, 
                        terms = c("scaled_year[all]"), 
                        type = "fe", 
@@ -264,7 +316,7 @@ Bquad_model_tmin <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_tmin_B)
 
-AIC(Bnull_model_tmin, Blinear_model_tmin, Bquad_model_tmin)
+b_tmin_aic<- AIC(Bnull_model_tmin, Blinear_model_tmin, Bquad_model_tmin)
 # quad fit best
 
 # multiannual 
@@ -281,7 +333,7 @@ MAquad_model_tmin <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_tmin_MA)
 
-AIC(MAnull_model_tmin, MAlinear_model_tmin, MAquad_model_tmin)
+ma_tmin_aic<- AIC(MAnull_model_tmin, MAlinear_model_tmin, MAquad_model_tmin)
 # linear fit best
 
 # decadal 
@@ -298,7 +350,7 @@ Dquad_model_tmin <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_tmin_D)
 
-AIC(Dnull_model_tmin, Dlinear_model_tmin, Dquad_model_tmin)
+d_tmin_aic<- AIC(Dnull_model_tmin, Dlinear_model_tmin, Dquad_model_tmin)
 # quad fit best
 
 # multidecadal
@@ -315,15 +367,27 @@ MDquad_model_tmin <-
   glmmTMB(avg_sync~ poly(scaled_year, 2, raw=TRUE), 
           data= avg_env_sync_tmin_MD)
 
-AIC(MDnull_model_tmin, MDlinear_model_tmin, MDquad_model_tmin)
+md_tmin_aic<- AIC(MDnull_model_tmin, MDlinear_model_tmin, MDquad_model_tmin)
 # quad fit best
 
 # All together:
-Bvis_prod_tmin <- ggpredict(Bquad_model_tmin, 
-                           terms = c("scaled_year[all]"), 
-                           type = "fe", 
-                           ci.lvl = .95)
-Bvis_prod_tmin$interval <- "biennial"
+intercept <- fixef(Bnull_model_tmin)$cond["(Intercept)"]
+vcov_matrix <- vcov(Bnull_model_tmin)$cond
+se_intercept <- sqrt(vcov_matrix["(Intercept)", "(Intercept)"])
+ci_low <- intercept - 1.96 * se_intercept
+ci_high <- intercept + 1.96 * se_intercept
+
+# Create a data frame for the null model predictions
+Bvis_prod_tmin <- data.frame(
+  x = avg_env_sync_tmin_B$x, # mimic "scaled_year[all]"
+  predicted = intercept,
+  std.error = se_intercept,
+  conf.low = ci_low,
+  conf.high = ci_high,
+  group = "1",
+  interval = "biennial"# Ensure it matches the intervals in other models
+)
+
 MAvis_prod_tmin <- ggpredict(MAlinear_model_tmin, 
                             terms = c("scaled_year[all]"), 
                             type = "fe", 
@@ -347,14 +411,12 @@ final_avg_ppt_data$driver = "ppt"
 final_avg_tmin_data$driver = "tmin"
 
 final_avg_env_data <- rbind(final_avg_ppt_data, final_avg_tmin_data)
-final_avg_env_data <- inner_join(final_avg_env_data, avg_env_sync)
+final_avg_env_data <- left_join(final_avg_env_data, avg_env_sync)
 
 avg_env_sync$year <- as.character(avg_env_sync$year)
-avg_env_sync$interval <- factor(avg_env_sync$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'),
-                                labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)" ))
+avg_env_sync$interval <- factor(avg_env_sync$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 final_avg_env_data$year <- as.character(final_avg_env_data$year)
-final_avg_env_data$interval <- factor(final_avg_env_data$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'),
-                                labels = c("biennial (2-3 yrs)", "multiannual (3-10 yrs)", "decadal (10-20 yrs)", "multidecadal (20-30 yrs)"))
+final_avg_env_data$interval <- factor(final_avg_env_data$interval , levels=c('biennial', 'multiannual', 'decadal', 'multidecadal'))
 final_avg_env_data$driver <- factor(final_avg_env_data$driver , levels=c('ppt', 'tmin'),
                                       labels = c("Precipitation", "Temperature"))
 avg_env_sync$driver <- factor(avg_env_sync$driver , levels=c('ppt', 'tmin'),
@@ -368,10 +430,10 @@ final_avg_tmin_sync <- final_avg_env_data %>%
   filter(driver == "Temperature")
 
 regional_avg_env <- ggplot() +
-  geom_point(data = final_avg_tmin_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
-  geom_line(data = final_avg_tmin_sync, aes(x = year, y = predicted, group = interval, color = interval),
+  geom_point(data = final_avg_ppt_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
+  geom_line(data = final_avg_ppt_sync, aes(x = year, y = predicted, group = interval, color = interval),
             linewidth = 1) +
-  geom_ribbon(data = final_avg_tmin_sync, aes(
+  geom_ribbon(data = final_avg_ppt_sync, aes(
     x = year,
     y = predicted,
     group=interval,
@@ -381,7 +443,7 @@ regional_avg_env <- ggplot() +
     alpha = 0.2,
     show.legend = F) +
   theme_bw()+
-  scale_y_continuous(limits = c(0.5, 2.0), breaks = seq(0.5, 2.0, 0.5))+
+  scale_y_continuous(limits = c(0.5, 1.75), breaks = seq(0.5, 1.75, 0.25))+
   scale_x_discrete(breaks = seq(1920,2020,20))+
   scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   scale_fill_brewer(palette = "RdYlBu", direction = -1)+
@@ -811,3 +873,18 @@ tmin_quad_mods <- final_avg_tmin_sync %>%
   filter(year > 1966) %>%
   group_by(interval) %>%
   summarise(min = min(predicted), max = max(predicted))
+
+
+extremes_ppt <- final_avg_ppt_sync %>%
+  group_by(interval) %>%
+  filter(predicted == min(predicted) | predicted == max(predicted)) %>%
+  arrange(interval, predicted)
+
+extremes_temp <- extremes_temp %>%
+  select(interval, year, scaled_year, predicted)
+
+extremes_temp <- final_avg_tmin_sync %>%
+  group_by(interval) %>%
+  filter(predicted == min(predicted) | predicted == max(predicted)) %>%
+  arrange(interval, predicted)
+

@@ -361,3 +361,14 @@ rwi.lines <- rwi.seg$psi[,2]
 rwi.p <- rwi.p + geom_vline(xintercept = rwi.lines, linetype = "dashed", color = "darkgrey") +
   labs(y = "average annual growth")+
   theme_bw()
+
+
+# cross plot avgs
+summer_tmin_site_avg <- summer_tmin %>%
+  group_by(plot) %>%
+  summarise(avg_plot = mean(summer_tmin))
+sd(summer_tmin_site_avg$avg_plot)
+rwi_site_avg <- avg_plot_growth %>%
+  group_by(year) %>%
+  summarise(sd_plot = sd(avg_growth))
+mean(rwi_site_avg$sd_plot)

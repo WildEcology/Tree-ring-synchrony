@@ -186,11 +186,11 @@ avg_ppt_sync_timescale_tmin$band <- factor(avg_ppt_sync_timescale_tmin$band, lev
 
 
 avg_ppt_sync_tmin_quant <- ggplot(data = avg_ppt_sync_timescale_tmin, aes(x = quantile, y = mean.ppt.sync, col = band)) +
-  geom_point()+
-  geom_line()+
+  geom_point(size = 1.5)+
+  geom_line(linewidth = 1.5)+
   geom_errorbar(aes(ymin = lower.ci.ppt.sync, ymax = upper.ci.ppt.sync, x = quantile, y=mean.ppt.sync, width = 0.2)) +
   theme_bw()+
-  ylim(0.0, 2.0) +
+  #ylim(0.0, 2.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   ylab("Average Precipitation Synchrony")+
   xlab("Temperature Quartiles")+
@@ -402,11 +402,11 @@ avg_tmin_sync_timescale_ppt <- na.omit(avg_tmin_sync_timescale_ppt)
 
 
 avg_tmin_sync_ppt_quant <- ggplot(data = avg_tmin_sync_timescale_ppt, aes(x = quantile, y = mean.tmin.sync, col = band)) +
-  geom_point()+
-  geom_line()+
+  geom_point(size = 1.5)+
+  geom_line(linewidth = 1.5)+
   geom_errorbar(aes(ymin = lower.ci.tmin.sync, ymax = upper.ci.tmin.sync, x = quantile, y=mean.tmin.sync, width = 0.2)) +
   theme_bw()+
-  ylim(0.0, 2.0) +
+  #ylim(0.0, 2.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Temperature Synchrony")+
@@ -430,7 +430,91 @@ avg_tmin_sync_ppt_quant <- ggplot(data = avg_tmin_sync_timescale_ppt, aes(x = qu
         panel.grid.major.x=element_blank()) 
 
 
+avg_ppt_sync_timescale_ppt <- inner_join(timescale_specific_avg_ppt, avg_env_sync_ppt, by=join_by(window_year == year, band == interval))
+avg_ppt_sync_timescale_ppt_CIs <- avg_ppt_sync_timescale_ppt %>%
+  group_by(band, quantile, ts_ppt)%>%
+  summarise(mean.ppt.sync = mean(avg_sync, na.rm = TRUE),
+            sd.ppt.sync = sd(avg_sync, na.rm = TRUE),
+            n.ppt.sync = n()) %>%
+  mutate(se.ppt.sync = sd.ppt.sync / sqrt(n.ppt.sync),
+         lower.ci.ppt.sync = mean.ppt.sync - qt(1 - (0.05 / 2), n.ppt.sync - 1) * se.ppt.sync,
+         upper.ci.ppt.sync = mean.ppt.sync + qt(1 - (0.05 / 2), n.ppt.sync - 1) * se.ppt.sync)
 
+avg_ppt_sync_timescale_ppt <- left_join(avg_ppt_sync_timescale_ppt, avg_ppt_sync_timescale_ppt_CIs)
+avg_ppt_sync_timescale_ppt$band <- factor(avg_ppt_sync_timescale_ppt$band, levels = c("biennial", "multiannual", "decadal", "multidecadal" ))
+avg_ppt_sync_timescale_ppt <- na.omit(avg_ppt_sync_timescale_ppt)
+
+
+avg_ppt_sync_ppt_quant <- ggplot(data = avg_ppt_sync_timescale_ppt, aes(x = quantile, y = mean.ppt.sync, col = band)) +
+  geom_point(size = 1.5)+
+  geom_line(linewidth = 1.5)+
+  geom_errorbar(aes(ymin = lower.ci.ppt.sync, ymax = upper.ci.ppt.sync, x = quantile, y=mean.ppt.sync, width = 0.2)) +
+  theme_bw()+
+  #ylim(0.0, 2.0) +
+  scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  #facet_wrap(~band)+
+  ylab("Average Precipitation Synchrony")+
+  xlab("Precipitation Quartiles")+
+  theme(axis.text.x = element_text(color = "grey20", size = 12,
+                                   angle = 0, hjust = 1.0, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, 
+                                   angle = 0, hjust = .5, 
+                                   face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14,
+                                    angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, 
+                                    angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_text(color = "grey20", size = 12,
+                                    angle = 0, hjust = 0, face = "plain"),
+        legend.text = element_text(color = "grey20", size = 12,
+                                   angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) 
+
+avg_tmin_sync_timescale_tmin <- inner_join(timescale_specific_avg_tmin, avg_env_sync_tmin, by=join_by(window_year == year, band == interval))
+avg_tmin_sync_timescale_tmin_CIs <- avg_tmin_sync_timescale_tmin %>%
+  group_by(band, quantile, ts_tmin)%>%
+  summarise(mean.tmin.sync = mean(avg_sync, na.rm = TRUE),
+            sd.tmin.sync = sd(avg_sync, na.rm = TRUE),
+            n.tmin.sync = n()) %>%
+  mutate(se.tmin.sync = sd.tmin.sync / sqrt(n.tmin.sync),
+         lower.ci.tmin.sync = mean.tmin.sync - qt(1 - (0.05 / 2), n.tmin.sync - 1) * se.tmin.sync,
+         upper.ci.tmin.sync = mean.tmin.sync + qt(1 - (0.05 / 2), n.tmin.sync - 1) * se.tmin.sync)
+
+avg_tmin_sync_timescale_tmin <- left_join(avg_tmin_sync_timescale_tmin, avg_tmin_sync_timescale_tmin_CIs)
+avg_tmin_sync_timescale_tmin$band <- factor(avg_tmin_sync_timescale_tmin$band, levels = c("biennial", "multiannual", "decadal", "multidecadal" ))
+avg_tmin_sync_timescale_tmin <- na.omit(avg_tmin_sync_timescale_tmin)
+
+
+avg_tmin_sync_tmin_quant <- ggplot(data = avg_tmin_sync_timescale_tmin, aes(x = quantile, y = mean.tmin.sync, col = band)) +
+  geom_point(size = 1.5)+
+  geom_line(linewidth = 1.5)+
+  geom_errorbar(aes(ymin = lower.ci.tmin.sync, ymax = upper.ci.tmin.sync, x = quantile, y=mean.tmin.sync, width = 0.2)) +
+  theme_bw()+
+  #ylim(0.0, 2.0) +
+  scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
+  #facet_wrap(~band)+
+  ylab("Average Temperature Synchrony")+
+  xlab("Temperature Quartiles")+
+  theme(axis.text.x = element_text(color = "grey20", size = 12,
+                                   angle = 0, hjust = 1.0, face = "plain"),
+        axis.text.y = element_text(color = "grey20", size = 12, 
+                                   angle = 0, hjust = .5, 
+                                   face = "plain"),
+        axis.title.x = element_text(color = "black", size = 14,
+                                    angle = 0, hjust = .5, face = "plain"),
+        axis.title.y = element_text(color = "black", size = 14, 
+                                    angle = 90, hjust = .5, face = "plain"),
+        legend.title = element_text(color = "grey20", size = 12,
+                                    angle = 0, hjust = 0, face = "plain"),
+        legend.text = element_text(color = "grey20", size = 12,
+                                   angle = 0, hjust = 0, face = "plain"),
+        panel.grid.minor.y=element_blank(),
+        panel.grid.major.y=element_blank(),
+        panel.grid.minor.x=element_blank(),
+        panel.grid.major.x=element_blank()) 
 
 
 
@@ -454,11 +538,11 @@ avg_rwi_sync_timescale_ppt$band <- factor(avg_rwi_sync_timescale_ppt$band, level
 avg_rwi_sync_timescale_ppt <- na.omit(avg_rwi_sync_timescale_ppt)
 
 avg_rwi_sync_ppt_quant <- ggplot(data = avg_rwi_sync_timescale_ppt, aes(x = quantile, y = mean.rwi.sync, col = band)) +
-  geom_point()+
-  geom_line()+
+  geom_point(size = 1.5)+
+  geom_line(linewidth = 1.5)+
   geom_errorbar(aes(ymin = lower.ci.rwi.sync, ymax = upper.ci.rwi.sync, x = quantile, y=mean.rwi.sync, width = 0.2)) +
   theme_bw()+
-  ylim(0.0, 1.0) +
+  #ylim(0.0, 1.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Growth Synchrony")+
@@ -500,11 +584,11 @@ avg_rwi_sync_timescale_tmin <- na.omit(avg_rwi_sync_timescale_tmin)
 avg_rwi_sync_timescale_tmin$band <- factor(avg_rwi_sync_timescale_tmin$band, levels = c("biennial", "multiannual", "decadal", "multidecadal" ))
 
 avg_rwi_sync_tmin_quant <- ggplot(data = avg_rwi_sync_timescale_tmin, aes(x = quantile, y = mean.rwi.sync, col = band)) +
-  geom_point()+
-  geom_line()+
+  geom_point(size = 1.5)+
+  geom_line(linewidth = 1.5)+
   geom_errorbar(aes(ymin = lower.ci.rwi.sync, ymax = upper.ci.rwi.sync, x = quantile, y=mean.rwi.sync, width = 0.2)) +
   theme_bw()+
-  ylim(0.0, 1.0) +
+  #ylim(0.0, 1.0) +
   scale_color_brewer(name = "Timescale Band", palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
   #facet_wrap(~band)+
   ylab("Average Growth Synchrony")+
@@ -528,8 +612,9 @@ avg_rwi_sync_tmin_quant <- ggplot(data = avg_rwi_sync_timescale_tmin, aes(x = qu
         panel.grid.major.x=element_blank())
 
 
+
 #### Perform pairwise comparisons of multiple groups using t.tests with bonferroni p-value adjustment ####
-# correction Factor applied for 6 tests per band with 4 quantiles in each band
+# correction factor applied for 6 tests per band with 4 quantiles in each band
 corr_p_value <- (0.05/6)
 ## RWI Sync across TMIN quantiles ##
 
@@ -833,6 +918,155 @@ t.test_tmin_sync_ppt_quantiles_results  <- do.call(rbind, t.test_tmin_sync_ppt_q
                                  Adjusted_P_Value > corr_p_value ~ "no"))
 # multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
 t.test_tmin_sync_ppt_quantiles_results$Mean_Difference <- t.test_tmin_sync_ppt_quantiles_results$Mean_Difference * -1
+
+## PPT Sync across PPT quantiles ##
+
+# expand data to include all data points
+avg_ppt_sync_timescale_ppt <- inner_join(timescale_specific_avg_ppt, avg_env_sync_ppt, by=join_by(window_year == year, band == interval))
+# remove NAs
+avg_ppt_sync_timescale_ppt <- na.omit(avg_ppt_sync_timescale_ppt)
+# make sure quantile is a factor
+avg_ppt_sync_timescale_ppt$quantile <- factor(avg_ppt_sync_timescale_ppt$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+# create an empty list to store the results for each band
+t.test_ppt_sync_ppt_quantiles_results <- list()
+
+# loop through each timescale band
+for (xx in 1:length(unique(avg_ppt_sync_timescale_ppt$band))) {
+  
+  current <- unique(avg_ppt_sync_timescale_ppt$band)[xx]
+  band_data <- avg_ppt_sync_timescale_ppt %>%
+    filter(band == current)
+  
+  # manually generate pairs in the desired order (1-2, 1-3, 1-4, etc.)
+  pairs <- list()
+  # specify the order of quartiles for pair generation (even if the factor levels are reversed)
+  quartile_order <- c("1", "2", "3", "4")
+  
+  for (i in 1:(length(quartile_order) - 1)) {
+    for (j in (i + 1):length(quartile_order)) {
+      pairs[[length(pairs) + 1]] <- c(quartile_order[i], quartile_order[j])
+    }
+  }
+  
+  # ensure the factor levels in the data are still set to 4, 3, 2, 1
+  band_data$quantile <- factor(band_data$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+  
+  # perform t-tests manually for each pair and extract statistics
+  results <- lapply(pairs, function(pair) {
+    # subset data for the current pair
+    subset_data <- subset(band_data, quantile %in% pair)
+    
+    # perform t-test
+    t_test <- t.test(avg_sync ~ quantile, data = subset_data)
+    
+    # calculate mean difference between the two groups
+    group_means <- aggregate(avg_sync ~ quantile, data = subset_data, mean)
+    mean_diff <- diff(group_means$avg_sync)
+    
+    # extract p-values, confidence intervals, and t-statistics
+    data.frame(
+      Band = current,
+      Group1 = pair[1],
+      Group2 = pair[2],
+      Mean_Difference = mean_diff,
+      P_Value = t_test$p.value,
+      Lower_CI = t_test$conf.int[1],
+      Upper_CI = t_test$conf.int[2],
+      T_Statistic = t_test$statistic,
+      DF = t_test$parameter
+    )
+  })
+  # combine the individual paired results into a data frame for the current band
+  band_results_df <- do.call(rbind, results)
+  
+  # apply Bonferroni adjustment for the current band
+  band_results_df$Adjusted_P_Value <- p.adjust(band_results_df$P_Value, method = "bonferroni")
+  
+  # combine the band-specific results
+  t.test_ppt_sync_ppt_quantiles_results [[current]] <- band_results_df
+}
+
+# combine results for all bands into a data frame
+t.test_ppt_sync_ppt_quantiles_results  <- do.call(rbind, t.test_ppt_sync_ppt_quantiles_results) %>%
+  mutate(significant = case_when(Adjusted_P_Value <= corr_p_value ~ "yes", 
+                                 Adjusted_P_Value > corr_p_value ~ "no"))
+# multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
+t.test_ppt_sync_ppt_quantiles_results$Mean_Difference <- t.test_ppt_sync_ppt_quantiles_results$Mean_Difference * -1
+
+
+## tmin Sync across TMIN quantiles ##
+
+# expand data to include all data points
+avg_tmin_sync_timescale_tmin <- inner_join(timescale_specific_avg_tmin, avg_env_sync_tmin, by=join_by(window_year == year, band == interval))
+# remove NAs
+avg_tmin_sync_timescale_tmin <- na.omit(avg_tmin_sync_timescale_tmin)
+# make sure quantile is a factor
+avg_tmin_sync_timescale_tmin$quantile <- factor(avg_tmin_sync_timescale_tmin$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+# create an empty list to store the results for each band
+t.test_tmin_sync_tmin_quantiles_results <- list()
+
+# loop through each timescale band
+for (xx in 1:length(unique(avg_tmin_sync_timescale_tmin$band))) {
+  
+  current <- unique(avg_tmin_sync_timescale_tmin$band)[xx]
+  band_data <- avg_tmin_sync_timescale_tmin %>%
+    filter(band == current)
+  
+  # manually generate pairs in the desired order (1-2, 1-3, 1-4, etc.)
+  pairs <- list()
+  # specify the order of quartiles for pair generation (even if the factor levels are reversed)
+  quartile_order <- c("1", "2", "3", "4")
+  
+  for (i in 1:(length(quartile_order) - 1)) {
+    for (j in (i + 1):length(quartile_order)) {
+      pairs[[length(pairs) + 1]] <- c(quartile_order[i], quartile_order[j])
+    }
+  }
+  
+  # ensure the factor levels in the data are still set to 4, 3, 2, 1
+  band_data$quantile <- factor(band_data$quantile, levels = c("4", "3", "2", "1"), ordered = TRUE)
+  
+  # perform t-tests manually for each pair and extract statistics
+  results <- lapply(pairs, function(pair) {
+    # subset data for the current pair
+    subset_data <- subset(band_data, quantile %in% pair)
+    
+    # perform t-test
+    t_test <- t.test(avg_sync ~ quantile, data = subset_data)
+    
+    # calculate mean difference between the two groups
+    group_means <- aggregate(avg_sync ~ quantile, data = subset_data, mean)
+    mean_diff <- diff(group_means$avg_sync)
+    
+    # extract p-values, confidence intervals, and t-statistics
+    data.frame(
+      Band = current,
+      Group1 = pair[1],
+      Group2 = pair[2],
+      Mean_Difference = mean_diff,
+      P_Value = t_test$p.value,
+      Lower_CI = t_test$conf.int[1],
+      Upper_CI = t_test$conf.int[2],
+      T_Statistic = t_test$statistic,
+      DF = t_test$parameter
+    )
+  })
+  # combine the individual paired results into a data frame for the current band
+  band_results_df <- do.call(rbind, results)
+  
+  # apply Bonferroni adjustment for the current band
+  band_results_df$Adjusted_P_Value <- p.adjust(band_results_df$P_Value, method = "bonferroni")
+  
+  # combine the band-specific results
+  t.test_tmin_sync_tmin_quantiles_results [[current]] <- band_results_df
+}
+
+# combine results for all bands into a data frame
+t.test_tmin_sync_tmin_quantiles_results  <- do.call(rbind, t.test_tmin_sync_tmin_quantiles_results) %>%
+  mutate(significant = case_when(Adjusted_P_Value <= corr_p_value ~ "yes", 
+                                 Adjusted_P_Value > corr_p_value ~ "no"))
+# multiply the mean difference by -1 to correct the direction of change from smaller quartiles to larger quartiles
+t.test_tmin_sync_tmin_quantiles_results$Mean_Difference <- t.test_tmin_sync_tmin_quantiles_results$Mean_Difference * -1
 
 
 
