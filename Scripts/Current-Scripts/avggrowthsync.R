@@ -34,6 +34,7 @@ M2events <- M2 %>%
 
 # classify timescale intervals
 M2events$ts <- as.numeric(M2events$ts)
+
 M2events <- M2events %>%
   mutate(interval = case_when(ts >= 2 & ts <= 3 ~ "biennial",
                               ts > 3 & ts <= 10 ~ "multiannual",
