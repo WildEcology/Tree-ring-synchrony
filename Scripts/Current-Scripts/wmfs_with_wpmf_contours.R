@@ -38,7 +38,7 @@ plotmag.tts <- function(object, zlims = NULL, neat = TRUE,
     grDevices::pdf(paste0(filename, ".pdf"))
   }
   
-  # Plot image without axes
+  # plot image without axes
   if (!colorbar) {
     graphics::image(x = times, y = log2(timescales), z = wav, xlab = "Time",
                     zlim = zlims, ylab = "Timescale", axes = FALSE,
@@ -47,12 +47,6 @@ plotmag.tts <- function(object, zlims = NULL, neat = TRUE,
     fields::image.plot(x = times, y = log2(timescales), z = wav, xlab = "Time",
                        zlim = zlims, ylab = "Timescale", axes = FALSE,
                        col = colorfill(100), main = title, ...)
-  }
-  
-  # Only draw axes if custom_axes is FALSE
-  if (!custom_axes) {
-    graphics::axis(1, at = xlocs, labels = xlocs)
-    graphics::axis(2, at = log2(ylocs), labels = ylocs)
   }
   
   if (!is.na(filename)) {
@@ -66,23 +60,30 @@ temp_xx <- psync.by.chance(n)
 upper<- temp_xx[2]
 lower <- temp_xx[1]
 
-# Get wavelet data
+# get wavelet data
 wav <- Mod(get_values(res_growth_wpmf))
 times <- get_times(res_growth_wpmf)
 timescales <- get_timescales(res_growth_wpmf)
 
-# Plot the wavelet magnitude
+# plot wmf growth with adjusted axes
 plotmag.tts(res_growth_wmf)
 axis(1, at = seq(1900, 2020, by = 20), labels = seq(1900, 2020, by = 20))
 axis(2, at = log2(c(3, 10, 20, 30)), labels = c("3", "10", "20", "30"), las = 1)
-# Add contour lines (upper and lower)
+
+# add contour lines (upper and lower) from wpmf
 graphics::contour(x = times, y = log2(timescales), z = wav, levels = upper, 
                   drawlabels = FALSE, lwd = 2, xaxs = "i", xaxt = "n", 
                   xaxp = c(0, 1, 5), las = 1, frame = FALSE, lty = 1, 
                   yaxt = "n", add = TRUE)
 
-#graphics::contour(x = times, y = log2(timescales), z = wav, levels = lower, 
-                  # drawlabels = FALSE, lwd = 2, xaxs = "i", xaxt = "n", 
-                  # xaxp = c(0, 1, 5), las = 1, frame = FALSE, lty = 1, 
-                  # col = "white", yaxt = "n", add = TRUE)
-                  # 
+# plot ppt wmf with adjusted axes
+global_range <- range(c(wav1, wav2), na.rm = TRUE)
+plotmag.tts(res_ppt_wmf, zlims = global_range)
+axis(1, at = seq(1900, 2020, by = 20), labels = seq(1900, 2020, by = 20))
+axis(2, at = log2(c(3, 10, 20, 30)), labels = c("3", "10", "20", "30"), las = 1)
+
+# plot tmin wmf with adjusted axes
+plotmag.tts(res_tmin_wmf, zlims = global_range)
+axis(1, at = seq(1900, 2020, by = 20), labels = seq(1900, 2020, by = 20))
+axis(2, at = log2(c(3, 10, 20, 30)), labels = c("3", "10", "20", "30"), las = 1)
+

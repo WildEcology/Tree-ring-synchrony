@@ -443,10 +443,30 @@ regional_avg_env <- ggplot() +
     alpha = 0.2,
     show.legend = F) +
   theme_bw()+
-  scale_y_continuous(limits = c(0.5, 1.75), breaks = seq(0.5, 1.75, 0.25))+
+  scale_y_continuous(limits = c(0.5, 2.0), breaks = seq(0.5, 2.0, 0.5))+
   scale_x_discrete(breaks = seq(1920,2020,20))+
-  scale_color_brewer(palette="RdYlBu", direction = -1, labels = c("Biennial (2-3 yrs)","Multiannual (3-10 yrs)", "Decadal (10-20 yrs)", "Multidecadal (20-30 yrs)"))+
-  scale_fill_brewer(palette = "RdYlBu", direction = -1)+
+  scale_color_manual(
+    values = c(
+      "multidecadal" = "#EE5A36",
+      "decadal" = "#F5AB54",
+      "multiannual" = "#9FC4E8",
+      "biennial" = "#CFA4CC"
+    ),
+    labels = c(
+      "biennial" = "Biennial (2-3 yrs)",
+      "multiannual" = "Multiannual (3-10 yrs)",
+      "decadal" = "Decadal (10-20 yrs)",
+      "multidecadal" = "Multidecadal (20-30 yrs)"
+    )
+  ) +
+  scale_fill_manual(
+    values = c(
+      "multidecadal" = "#EE5A36",
+      "decadal" = "#F5AB54",
+      "multiannual" = "#9FC4E8",
+      "biennial" = "#CFA4CC"
+    )
+  )+
   theme(text = element_text(size = 16),
         axis.text.x = element_text(color = "grey20", size = 14, angle = 45, hjust = 1, face = "plain"),
         axis.text.y = element_text(color = "grey20", size = 14, angle = 0, hjust = .5, vjust = 0, face = "plain"),
@@ -461,7 +481,7 @@ regional_avg_env <- ggplot() +
   ylab("Average Precipitation Synchrony")+
   xlab("Year")
 
-ggsave("/Users/kaitlynmcknight/Desktop/TeamTreeMS1Figs/MS1_FINALFIGS/avg_ppt_sync.svg", width = 8, height = 6, units = "in")
+ggsave("/Users/kaitlynmcknight/Desktop/TeamTreeMS1Figs/canva/canva4/avg_tmin_sync.eps", width = 8, height = 6, units = "in")
 
 
 

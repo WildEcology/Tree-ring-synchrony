@@ -72,7 +72,9 @@ M2events <- M2events %>%
 M2events_condensed_timeseries <- M2events %>%
   filter(uID %in% M2events_filtered)
 
-avg_sync <- M2events_condensed_timeseries %>%
+M2events$year <- as.character(M2events$year )
+#avg_sync <- M2events_condensed_timeseries %>%
+  avg_sync <- M2events %>%
   group_by(year, interval) %>%
   summarise(avg_sync = mean(values))
 
@@ -281,6 +283,59 @@ regional_avg <- ggplot() +
         panel.grid.major.x=element_blank()) +
   ylab("Average Growth Synchrony")+
   xlab("Year")
+
+
+regional_avg <- ggplot() +
+  geom_point(data = final_avg_data, aes(x=year, y=avg_sync, col=band), alpha = 0.2) +
+  geom_line(data = final_avg_data, aes(x=year, y=predicted, group=band, col=band), linewidth = 1) +
+  geom_ribbon(data = final_avg_data, aes(
+    x = year,
+    y = predicted,
+    group = band,
+    fill = band,
+    ymin = conf.low,
+    ymax = conf.high),
+    alpha = 0.2,
+    show.legend = FALSE) +
+  theme_bw() +
+  scale_x_discrete(breaks = seq(1920, 2020, 20)) +
+  scale_color_manual(
+    values = c(
+      "multidecadal" = "#EE5A36",
+      "decadal" = "#F5AB54",
+      "multiannual" = "#9FC4E8",
+      "biennial" = "#CFA4CC"
+    ),
+    labels = c(
+      "biennial" = "Biennial (2-3 yrs)",
+      "multiannual" = "Multiannual (3-10 yrs)",
+      "decadal" = "Decadal (10-20 yrs)",
+      "multidecadal" = "Multidecadal (20-30 yrs)"
+    )
+  ) +
+  scale_fill_manual(
+    values = c(
+      "multidecadal" = "#EE5A36",
+      "decadal" = "#F5AB54",
+      "multiannual" = "#9FC4E8",
+      "biennial" = "#CFA4CC"
+    )
+  ) +
+  theme(
+    axis.text.x = element_text(color = "grey20", size = 12, angle = 45, hjust = 1),
+    axis.text.y = element_text(color = "grey20", size = 12),
+    axis.title.x = element_text(color = "black", size = 16),
+    axis.title.y = element_text(color = "black", size = 16),
+    legend.title = element_blank(),
+    legend.text = element_text(color = "grey20", size = 10),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_blank()
+  ) +
+  ylab("Average Growth Synchrony") +
+  xlab("Year")
+
 
 ggsave("/Users/kaitlynmcknight/Desktop/TeamTreeMS1Figs/MS1_FINALFIGS/regional_avg.svg", width = 8, height = 6, units = "in")
 
