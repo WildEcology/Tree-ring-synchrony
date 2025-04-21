@@ -430,17 +430,16 @@ final_avg_tmin_sync <- final_avg_env_data %>%
   filter(driver == "Temperature")
 
 regional_avg_env <- ggplot() +
-  geom_point(data = final_avg_ppt_sync, aes(x=year, y=avg_sync, group = interval, color= interval), alpha = 0.1) +
-  geom_line(data = final_avg_ppt_sync, aes(x = year, y = predicted, group = interval, color = interval),
+  geom_point(data = final_avg_tmin_sync, aes(x=year, y=avg_sync, group = interval, color= interval)) +
+  geom_line(data = final_avg_tmin_sync, aes(x = year, y = predicted, group = interval, color = interval),
             linewidth = 1) +
-  geom_ribbon(data = final_avg_ppt_sync, aes(
+  geom_ribbon(data = final_avg_tmin_sync, aes(
     x = year,
     y = predicted,
     group=interval,
     fill = interval,
     ymin = conf.low,
     ymax = conf.high),
-    alpha = 0.2,
     show.legend = F) +
   theme_bw()+
   scale_y_continuous(limits = c(0.5, 2.0), breaks = seq(0.5, 2.0, 0.5))+
@@ -450,7 +449,7 @@ regional_avg_env <- ggplot() +
       "multidecadal" = "#EE5A36",
       "decadal" = "#F5AB54",
       "multiannual" = "#9FC4E8",
-      "biennial" = "#CFA4CC"
+      "biennial" = "darkslateblue"
     ),
     labels = c(
       "biennial" = "Biennial (2-3 yrs)",
@@ -464,7 +463,7 @@ regional_avg_env <- ggplot() +
       "multidecadal" = "#EE5A36",
       "decadal" = "#F5AB54",
       "multiannual" = "#9FC4E8",
-      "biennial" = "#CFA4CC"
+      "biennial" = "darkslateblue"
     )
   )+
   theme(text = element_text(size = 16),
@@ -478,7 +477,7 @@ regional_avg_env <- ggplot() +
         panel.grid.major.y=element_blank(),
         panel.grid.minor.x=element_blank(),
         panel.grid.major.x=element_blank()) +
-  ylab("Average Precipitation Synchrony")+
+  ylab("Average Temperature Synchrony")+
   xlab("Year")
 
 ggsave("/Users/kaitlynmcknight/Desktop/TeamTreeMS1Figs/canva/canva4/avg_tmin_sync.eps", width = 8, height = 6, units = "in")

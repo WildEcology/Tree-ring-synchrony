@@ -38,9 +38,9 @@ rwi_00s <- rwi_dat %>%
 rwi_00s_tree_filtered<- rwi_00s[rowSums(is.na(rwi_00s))==0,]
 
 # find plots with at least 5 trees with the whole time series
-rwi_00s_plot_filtered <- rwi_00s_tree_filtered %>%
+rwi_00s_plot_filtered <- rwi_00s_tree_filtered %>% 
   pivot_longer(3:121, names_to = "year", values_to = "rwi")%>%
-  group_by(plot)%>%
+  group_by(plot) %>%
   mutate(num_trees = round(n()/118))%>%
   filter(num_trees >= 5)
 

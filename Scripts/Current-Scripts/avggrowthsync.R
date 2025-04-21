@@ -286,7 +286,7 @@ regional_avg <- ggplot() +
 
 
 regional_avg <- ggplot() +
-  geom_point(data = final_avg_data, aes(x=year, y=avg_sync, col=band), alpha = 0.2) +
+  geom_point(data = final_avg_data, aes(x=year, y=avg_sync, col=band)) +
   geom_line(data = final_avg_data, aes(x=year, y=predicted, group=band, col=band), linewidth = 1) +
   geom_ribbon(data = final_avg_data, aes(
     x = year,
@@ -295,7 +295,6 @@ regional_avg <- ggplot() +
     fill = band,
     ymin = conf.low,
     ymax = conf.high),
-    alpha = 0.2,
     show.legend = FALSE) +
   theme_bw() +
   scale_x_discrete(breaks = seq(1920, 2020, 20)) +
@@ -304,7 +303,7 @@ regional_avg <- ggplot() +
       "multidecadal" = "#EE5A36",
       "decadal" = "#F5AB54",
       "multiannual" = "#9FC4E8",
-      "biennial" = "#CFA4CC"
+      "biennial" = "darkslateblue"
     ),
     labels = c(
       "biennial" = "Biennial (2-3 yrs)",
@@ -318,7 +317,7 @@ regional_avg <- ggplot() +
       "multidecadal" = "#EE5A36",
       "decadal" = "#F5AB54",
       "multiannual" = "#9FC4E8",
-      "biennial" = "#CFA4CC"
+      "biennial" = "darkslateblue"
     )
   ) +
   theme(
