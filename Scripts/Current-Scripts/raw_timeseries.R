@@ -295,7 +295,7 @@ tmin.lm_74 <- lm(formula = trend~year, data = summer_tmin_trend[summer_tmin_tren
 summary(tmin.lm_74)
 tmin.coeff <- coef(tmin.lm)
 tmin.p.line <- tmin.p + geom_abline(intercept = tmin.coeff[1],
-                               slope = tmin.coeff[2])
+                               slope = tmin.coeff[2])#
 tmin.seg <- segmented(tmin.lm,
                       seg.Z = ~ year,
                       psi = list(year = c(1974)))

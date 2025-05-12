@@ -74,7 +74,7 @@ M2events_condensed_timeseries <- M2events %>%
 
 M2events$year <- as.character(M2events$year )
 #avg_sync <- M2events_condensed_timeseries %>%
-  avg_sync <- M2events %>%
+  avg_sync <- M2events_condensed_timeseries %>%
   group_by(year, interval) %>%
   summarise(avg_sync = mean(values))
 

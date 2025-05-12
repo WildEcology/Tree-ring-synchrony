@@ -166,7 +166,8 @@ multidecadal_tmin_quantiles <- multidecadal_tmin_quantiles %>%
                              quantile == 4 ~ 6.300619))
 
 # rbind all bands df back into one
-timescale_specific_avg_tmin <- rbind(biennial_tmin_quantiles, multiannual_tmin_quantiles, decadal_tmin_quantiles, multidecadal_tmin_quantiles)
+timescale_specific_avg_tmin <-
+  rbind(biennial_tmin_quantiles, multiannual_tmin_quantiles, decadal_tmin_quantiles, multidecadal_tmin_quantiles)
 
 avg_env_sync <- readRDS("~/Documents/GitHub/Tree-ring-synchrony/Data/avg_env_sync.RDS")
 avg_env_sync_ppt <- avg_env_sync %>%
@@ -322,7 +323,7 @@ timescale_specific_avg_ppt <- rbind(ppt_window_3, ppt_window_7, ppt_window_15, p
 
 biennial_ppt_quantiles <- timescale_specific_avg_ppt %>%
   filter(band == "biennial")
-quantile(biennial_ppt_quantiles$window_avg_ppt)
+b_ppt_quantiles <- quantile(biennial_ppt_quantiles$window_avg_ppt)
 
 biennial_ppt_quantiles <-  biennial_ppt_quantiles %>%
   mutate(quantile = case_when(window_avg_ppt <= 103.43028  ~ 1,
