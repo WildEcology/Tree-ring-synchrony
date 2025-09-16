@@ -28,6 +28,8 @@ for (counter in 2:dim(dat)[1])
 
 dat_df <- as.data.frame(dat)
 colnames(dat_df) <- 1900:2019
+
+
 dat_df$plot <- c(1:20)
 
 dat_df <- dat_df %>%
