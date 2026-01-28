@@ -61,6 +61,7 @@ avg_plot_growth_wide <- as.matrix(avg_plot_growth_wide)
 colnames(avg_plot_growth_wide) <- NULL
 avg_plot_growth_wide <- avg_plot_growth_wide[, c(2:120)] # time series 1900 -2018
 
+
 # convert character matrix to numeric
 avg_plot_growth_wide = as.data.frame(avg_plot_growth_wide, stringsAsFactors = FALSE)
 avg_plot_growth_wide = map_df(avg_plot_growth_wide, as.numeric)
