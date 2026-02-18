@@ -675,8 +675,369 @@ parameterEstimates(SEM.34.fit, standardized = TRUE)
 semPaths(SEM.34.fit, what="std", whatLabels="std", residuals=FALSE)
 
 
+# drop all non-sig pathways from full model = fully reduced
+# SEM 1-2 across all timescales
+SEM.12 <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync ~~ tmin_sync
+  tmin_sync ~ ts_tmin + ts_ppt
+  rwi_sync ~ ppt_sync + ts_tmin
+'
+
+SEM.12.fit <- sem(SEM.12, data=model_df_12)
+summary(SEM.12.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.12.fit, standardized = TRUE)
+semPaths(SEM.12.fit, what="std", whatLabels="std", residuals=FALSE)
 
 
+# SEM 3-4 across all timescales
+SEM.34  <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync  ~ ts_ppt + ts_tmin
+  rwi_sync ~ ppt_sync + ts_ppt
+'
+
+SEM.34.fit <- sem(SEM.34, data=model_df_34)
+summary(SEM.34.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.34.fit, standardized = TRUE)
+semPaths(SEM.34.fit, what="std", whatLabels="std", residuals=FALSE)
+
+# drop most non-sig pathway from each SEM
+# SEM 1-2 across all timescales - drop rwi_sync~tmin_sync
+SEM.12 <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync ~~ tmin_sync
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+  rwi_sync ~ ppt_sync + ts_ppt + ts_tmin
+'
+
+SEM.12.fit <- sem(SEM.12, data=model_df_12)
+summary(SEM.12.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.12.fit, standardized = TRUE)
+semPaths(SEM.12.fit, what="std", whatLabels="std", residuals=FALSE)
+
+
+# SEM 3-4 across all timescales - drop rwi_sync~tmin_sync
+SEM.34  <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync ~~ tmin_sync
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+  rwi_sync ~ ppt_sync + ts_ppt + ts_tmin
+'
+
+SEM.34.fit <- sem(SEM.34, data=model_df_34)
+summary(SEM.34.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.34.fit, standardized = TRUE)
+semPaths(SEM.34.fit, what="std", whatLabels="std", residuals=FALSE)
+
+# drop 2 most non-sig pathway from each SEM
+# SEM 1-2 across all timescales - drop rwi_sync~tmin_sync, rwi_sync ~ ts_ppt
+SEM.12 <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync ~~ tmin_sync
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+  rwi_sync ~ ppt_sync + ts_tmin
+'
+
+SEM.12.fit <- sem(SEM.12, data=model_df_12)
+summary(SEM.12.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.12.fit, standardized = TRUE)
+semPaths(SEM.12.fit, what="std", whatLabels="std", residuals=FALSE)
+
+
+# SEM 3-4 across all timescales - drop rwi_sync~tmin_sync, ppt_sync ~~ tmin_sync
+SEM.34  <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+  rwi_sync ~ ppt_sync + ts_ppt + ts_tmin
+'
+
+SEM.34.fit <- sem(SEM.34, data=model_df_34)
+summary(SEM.34.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.34.fit, standardized = TRUE)
+semPaths(SEM.34.fit, what="std", whatLabels="std", residuals=FALSE)
+
+# drop 3 most non-sig pathway from each SEM
+# SEM 1-2 across all timescales - drop rwi_sync~tmin_sync, rwi_sync ~ ts_ppt, ppt_sync~ts_ppt
+SEM.12 <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync ~~ tmin_sync
+  ppt_sync  ~ ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+  rwi_sync ~ ppt_sync + ts_tmin
+'
+
+SEM.12.fit <- sem(SEM.12, data=model_df_12)
+summary(SEM.12.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.12.fit, standardized = TRUE)
+semPaths(SEM.12.fit, what="std", whatLabels="std", residuals=FALSE)
+
+
+# SEM 3-4 across all timescales - drop rwi_sync~tmin_sync, ppt_sync ~~ tmin_sync, tmin_sync~ts_tmin
+SEM.34  <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_ppt
+  rwi_sync ~ ppt_sync + ts_ppt + ts_tmin
+'
+
+SEM.34.fit <- sem(SEM.34, data=model_df_34)
+summary(SEM.34.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.34.fit, standardized = TRUE)
+semPaths(SEM.34.fit, what="std", whatLabels="std", residuals=FALSE)
+
+# drop 4 most non sig pathways
+# SEM 3-4 across all timescales - drop rwi_sync~tmin_sync, ppt_sync ~~ tmin_sync, tmin_sync~ts_tmin, rwi_sync ~ ts_tmin
+SEM.34  <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_ppt
+  rwi_sync ~ ppt_sync + ts_ppt
+'
+
+SEM.34.fit <- sem(SEM.34, data=model_df_34)
+summary(SEM.34.fit, stand=TRUE, rsq=TRUE)
+
+parameterEstimates(SEM.34.fit, standardized = TRUE)
+semPaths(SEM.34.fit, what="std", whatLabels="std", residuals=FALSE)
+
+
+
+
+
+## THEORY - DRIVEN SEM APPROACH ##
+# using one dataset, create a grouping variable where quartiles 1&2 = cool and 
+# quartiles 3&4 = warm 
+model_df <- model_df %>% 
+  mutate(group = case_when(tmin_quartile == 1 ~ "cool",
+                           tmin_quartile == 2 ~ "cool", 
+                           tmin_quartile == 3 ~ "warm",
+                           tmin_quartile == 4 ~ "warm")) %>%
+  filter(!is.na(group))
+
+# make group a factor with levels = cool, warm 
+model_df$group <- factor(model_df$group, levels = c("cool","warm"))
+
+# claim: warming increases the importance of precipitation synchrony (the moran effect of precip)
+# in driving growth synchrony
+# three theorectical pathways: rwi_sync ~ ppt_sync (key moran pathway), ppt_sync ~ ts_tmin (warming effects precip synchrony),
+# rwi_sync ~ ts_tmin (direct effect of warming on growth sync), additional indirect pathway: ts_tmin --> ppt_sync --> rwi_sync
+
+# 'free' (estimates freely across groups) model with indirect pathway calculation included: 
+# a = ts_tmin --> ppt_sync, b = ppt_sync --> rwi_sync, c = ts_tmin --> rwi_sync
+theo_model_free <- '
+  ppt_sync ~ c(a_cool, a_warm)*ts_tmin
+  rwi_sync ~ c(b_cool, b_warm)*ppt_sync + c(c_cool, c_warm)*ts_tmin
+
+  # indirect effects by group
+  ind_cool := a_cool*b_cool
+  ind_warm := a_warm*b_warm
+  ind_diff := ind_warm - ind_cool
+'
+
+
+fit_free <- sem(theo_model_free, data = model_df, group = "group", estimator = "MLR")
+summary(fit_free, standardized = TRUE, fit.measures = TRUE)
+
+fitMeasures(fit_free, c("chisq","df","pvalue","cfi","tli","rmsea","srmr","aic","bic"))
+parameterEstimates(fit_free, standardized = TRUE)
+
+#'constrained' (estimates are equal across groups) model with the same indirect pathway calculation #
+theo_model_b_equal <- '
+  ppt_sync ~ c(a_cool, a_warm)*ts_tmin
+  rwi_sync ~ c(b, b)*ppt_sync + c(c_cool, c_warm)*ts_tmin
+
+  ind_cool := a_cool*b
+  ind_warm := a_warm*b
+  ind_diff := ind_warm - ind_cool
+'
+
+fit_b_equal <- sem(theo_model_b_equal, data = model_df, group = "group", estimator = "MLR")
+
+# determine if the free model is statistically different from the constrained model
+anova(fit_b_equal, fit_free)
+
+
+#### Fully Saturated Multi-Group SEM ####
+
+# STATISTICALLY SATURATED model (no covariance between endogenous variables)
+SEM_stat_sat <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync ~~ tmin_sync
+
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+
+  rwi_sync  ~ ppt_sync + tmin_sync + ts_ppt + ts_tmin
+'
+
+fit_stat_sat <- sem(
+  SEM_stat_sat,
+  data = model_df,
+  group = "group",
+  estimator = "MLR"
+)
+
+summary(fit_stat_sat, standardized = TRUE, fit.measures = TRUE)
+
+# STRUCTURALLY SATURATED model (no covariance between endogenous variables)
+SEM_sat <- '
+  ts_ppt ~~ ts_tmin
+
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+
+  rwi_sync  ~ ppt_sync + tmin_sync + ts_ppt + ts_tmin
+'
+
+fit_sat <- sem(
+  SEM_sat,
+  data = model_df,
+  group = "group",
+  estimator = "MLR"
+)
+
+summary(fit_sat, standardized = TRUE, fit.measures = TRUE)
+
+# trim model to include only significant pathways for each group
+SEM_trim <- '
+  ts_ppt ~~ ts_tmin
+
+  ppt_sync ~ c(0,NA)*ts_ppt + c(0,NA)*ts_tmin
+
+  tmin_sync ~ c(0,0)*ts_tmin + c(NA,0)*ts_ppt
+
+  rwi_sync ~ ppt_sync +
+             c(0,0)*tmin_sync +
+             c(0,0)*ts_ppt +
+             c(NA,0)*ts_tmin
+'
+
+fit_trim <- sem(
+  SEM_trim,
+  data = model_df,
+  group = "group",
+  estimator = "MLR"
+)
+
+summary(fit_trim, standardized=TRUE, fit.measures=TRUE)
+
+# trim model to remove only non-sig pathways across both groups
+SEM_trim2 <- '
+  ts_ppt ~~ ts_tmin
+
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_ppt
+
+  rwi_sync  ~ ppt_sync + ts_tmin
+'
+
+fit_trim2 <- sem(
+  SEM_trim2,
+  data = model_df,
+  group = "group",
+  estimator = "MLR"
+)
+
+summary(fit_trim2, standardized=TRUE, fit.measures=TRUE)
+
+# structurally saturated model fit best, compare to equal (all pathways)
+fit_equal_sat <- sem(
+  SEM_sat,
+  data = model_df,
+  group = "group",
+  estimator = "MLR",
+  group.equal = "regressions"
+)
+
+summary(fit_equal_sat, standardized = TRUE, fit.measures = TRUE)
+
+lavTestLRT(fit_sat,fit_equal_sat)
+# at least one pathway significantly differs across temp conditions
+# test them individually
+# start with ppt_sync --> rwi_sync (hypothesized pathway that will differ significantly)
+SEM_ppt_sync_rwi_sync_diff <- '
+  ts_ppt ~~ ts_tmin
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+
+  rwi_sync ~ c(b_cool, b_warm)*ppt_sync + tmin_sync + ts_ppt + ts_tmin
+
+  b_diff := b_warm - b_cool
+'
+
+fit_diff_ppt_sync_rwi_sync <- sem(SEM_ppt_sync_rwi_sync_diff, data=model_df, group="group", estimator="MLR")
+summary(fit_diff_ppt_sync_rwi_sync)
+
+# not that pathway
+# try tmin --> rwi_sync
+SEM_free_tminDiff <- '
+  ts_ppt ~~ ts_tmin
+
+  ppt_sync  ~ ts_ppt + ts_tmin
+  tmin_sync ~ ts_tmin + ts_ppt
+
+  rwi_sync ~ ppt_sync + tmin_sync + ts_ppt + c(d_cl, d_wr)*ts_tmin
+
+  d_diff := d_wr - d_cl
+'
+fit_free_tminDiff <- sem(SEM_free_tminDiff, data=model_df, group="group", estimator="MLR")
+summary(fit_free_tminDiff, standardized=TRUE)
+# this one is significantly different! 
+# test all pathways
+
+SEM_diffs <- '
+  ts_ppt ~~ ts_tmin
+
+  # Upstream climate → synchrony
+  ppt_sync  ~ c(a1_cl, a1_wr)*ts_ppt +
+              c(a2_cl, a2_wr)*ts_tmin
+
+  tmin_sync ~ c(a3_cl, a3_wr)*ts_tmin +
+              c(a4_cl, a4_wr)*ts_ppt
+
+  # Growth synchrony equation
+  rwi_sync  ~ c(b1_cl, b1_wr)*ppt_sync +
+              c(b2_cl, b2_wr)*tmin_sync +
+              c(b3_cl, b3_wr)*ts_ppt +
+              c(b4_cl, b4_wr)*ts_tmin
+
+  # Define differences (warm - cool)
+  d_a1 := a1_wr - a1_cl
+  d_a2 := a2_wr - a2_cl
+  d_a3 := a3_wr - a3_cl
+  d_a4 := a4_wr - a4_cl
+
+  d_b1 := b1_wr - b1_cl
+  d_b2 := b2_wr - b2_cl
+  d_b3 := b3_wr - b3_cl
+  d_b4 := b4_wr - b4_cl
+'
+
+fit_diffs <- sem(
+  SEM_diffs,
+  data = model_df,
+  group = "group",
+  estimator = "MLR"
+)
+
+
+
+parameterEstimates(fit_diffs, standardized=TRUE) %>%
+  filter(op == ":=") %>%
+  select(lhs, est, se, z, pvalue, std.all)
 #### Coherence Magnitudes ####
 source(here::here("Scripts/Current-Scripts/coh_tv.R"))
 # data for each variable
