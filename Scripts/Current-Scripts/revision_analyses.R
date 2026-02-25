@@ -1038,6 +1038,7 @@ fit_diffs <- sem(
 parameterEstimates(fit_diffs, standardized=TRUE) %>%
   filter(op == ":=") %>%
   select(lhs, est, se, z, pvalue, std.all)
+
 #### Coherence Magnitudes ####
 source(here::here("Scripts/Current-Scripts/coh_tv.R"))
 # data for each variable
